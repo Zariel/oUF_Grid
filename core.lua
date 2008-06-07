@@ -41,6 +41,7 @@ local debuffs = {
 	["Phsycic Scream"] = 3,
 	["Howl of Terror"] = 3,
 	["Hamstring"] = 5,
+	["Wingclip"] = 5,
 	["Crippling Poison"] = 6,
 	["Blind"] = 10,
 	["Cyclone"] = 10,
@@ -104,7 +105,7 @@ function f:UNIT_AURA(unit)
 
 	local frame = oUF.units[unit]
 	if not frame.Icon then return end
-	local current, text, dispell
+	local current, bTexture, dispell
 	for i = 1, 40 do
 		name, rank, buffTexture, count, dtype, duration, timeLeft = UnitDebuff(unit, i)
 		if not name then break end
@@ -113,14 +114,15 @@ function f:UNIT_AURA(unit)
 			dispell = dtype
 		end
 
-		if not debuffs[name] then break end
+		if debuffs[name] then
+			current = current or name
+			bTexture = bTexture or buffTexture
 
-		current = current or name
-		text = text or buffTexture
-		local prio = debuffs[name]
-		if prio > debuffs[current] then
-			current = name
-			text = buffTexture
+			local prio = debuffs[name]
+			if prio > debuffs[current] then
+				current = name
+				bTexture = buffTexture
+			end
 		end
 	end
 
@@ -145,10 +147,13 @@ function f:UNIT_AURA(unit)
 		end
 	end
 
-	if current and text then
-		frame.Icon:SetTexture(text)
+	if current and bTexture then
+		print(bTexture)
+		frame.Icon:SetTexture(bTexture)
 		frame.Icon:ShowText()
+		frame.DebuffTexture = true
 	else
+		frame.DebuffTexture = false
 		frame.Icon:HideText()
 	end
 end
@@ -170,9 +175,10 @@ function f:PLAYER_TARGET_CHANGED()
 	end
 
 	if not frame.Dispell then
-		frame.border:SetVertexColor(1,1,1)
+		frame.border:SetVertexColor(1, 1, 1)
 		frame.border:Show()
 	end
+
 	coloredFrame = "raid" .. id
 end
 
@@ -238,7 +244,7 @@ local frame = function(settings, self, unit)
 	name:SetFont(supernova, 10, "THINOUTLINE")
 	name:SetShadowColor(0,0,0,1)
 	name:SetShadowOffset(1, -1)
-	name:SetTextColor(1,1,1,1)
+	name:SetTextColor(1, 1, 1, 1)
 
 	self.Name = name
 	self.UNIT_NAME_UPDATE = Name_Update
@@ -256,15 +262,16 @@ local frame = function(settings, self, unit)
 	icon:SetPoint("CENTER")
 	icon:SetHeight(20)
 	icon:SetWidth(20)
+	icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 
-	icon.ShowText = function(self)
-		self:GetParent():GetParent().Name:Hide()
-		self:Show()
+	icon.ShowText = function(s)
+		self.Name:Hide()
+		s:Show()
 	end
 
-	icon.HideText = function(self)
-		self:GetParent():GetParent().Name:Show()
-		self:Hide()
+	icon.HideText = function(s)
+		self.Name:Show()
+		s:Hide()
 	end
 	self.Icon = icon
 
@@ -297,6 +304,7 @@ local atrib = {
 	["yOffset"] = -10,
 	["columnAnchorPoint"] = "LEFT",
 	["groupingOrder"] = "1,2,3,4,5,6,7,8",
+	["startingIndex"] = 1,
 }
 
 for k, v in pairs(atrib) do
