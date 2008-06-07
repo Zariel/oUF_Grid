@@ -25,7 +25,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ]]
 
-local print = function(str) return ChatFrame3:AddMessage(tostring(str)) end
+local print = function(str) return ChatFrame1:AddMessage(tostring(str)) end
 local _G = getfenv(0)
 local oUF = _G.oUF
 
@@ -42,7 +42,6 @@ local texture = [[Interface\AddOns\oUF_Kanne_Grid\media\gradient32x32.tga]]
 local hightlight = [[Interface\AddOns\oUF_Kanne_Grid\media\mouseoverHighlight.tga]]
 
 local PLAYERCLASS = select(2, UnitClass("player"))
-PLAYERCLASS = "PALADIN"
 local coloredFrame      -- Selected Raid Member
 
 local colors = {
@@ -103,6 +102,13 @@ local dispellClass = {
 	},
 }
 
+local dispellPiority = {
+	["Magic"] = 4,
+	["Poison"] = 3,
+	["Disease"] = 1,
+	["Curse"] = 2,
+}
+
 local ColorGradient = function(perc, r1, g1, b1, r2, g2, b2, r3, g3, b3)
 	if perc >= 1 then
 		return {r3, g3, b3}
@@ -139,7 +145,10 @@ function f:UNIT_AURA(unit)
 		if not name then break end
 
 		if dispellClass[PLAYERCLASS] and dispellClass[PLAYERCLASS][dtype] then
-			dispell = dtype
+			dispell = dispell or dtype
+			if dispellPiority[dtype] > dispellPiority[dispell] then
+				dispell = dtype
+			end
 		end
 
 		if debuffs[name] then
@@ -184,6 +193,7 @@ function f:UNIT_AURA(unit)
 		frame.Icon:HideText()
 	end
 end
+
 
 function f:PLAYER_TARGET_CHANGED()
 	local id = UnitInRaid("target") and UnitInRaid("target") + 1
@@ -282,7 +292,6 @@ local frame = function(settings, self, unit)
 	local hl = hp:CreateTexture(nil, "OVERLAY")
 	hl:SetAllPoints(self)
 	hl:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-	hl:SetAlpha(0.5)
 	hl:SetBlendMode("ADD")
 	hl:Hide()
 
@@ -348,6 +357,8 @@ raid:Show()
 
 local atrib = {
 	["showRaid"] = true,
+	["showPlayer"] = true,
+	["showSolo"] = true,
 	["maxColumns"] = 8,
 	["unitsPerColumn"] = 5,
 	["columnSpacing"] = 6,
