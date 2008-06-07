@@ -1,0 +1,4 @@
+## Interface: 20400
+## Dependencies: oUF
+
+core.lua
