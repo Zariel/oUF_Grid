@@ -66,7 +66,7 @@ local debuffs = {
 	["Mortal Strike"] = 8,
 	["Wound Poison"] = 9,
 	["Fear"] = 3,
-	["Phsycic Scream"] = 3,
+	["Psycic Scream"] = 3,
 	["Howl of Terror"] = 3,
 	["Hamstring"] = 5,
 	["Wingclip"] = 5,
@@ -233,13 +233,23 @@ local Health_Update = function(self, event, bar, unit, current, max)
 	end
 end
 
+local OnEnter = function(self)
+	UnitFrame_OnEnter(self)
+	self.Highlight:Show()
+end
+
+local OnLeave = function(self)
+	UnitFrame_OnLeave(self)
+	self.Highlight:Hide()
+end
+
 local frame = function(settings, self, unit)
 	self.menu = menu
 
 	self:EnableMouse(true)
 
-	self:SetScript("OnEnter", UnitFrame_OnEnter)
-	self:SetScript("OnLeave", UnitFrame_OnLeave)
+	self:SetScript("OnEnter", OnEnter)
+	self:SetScript("OnLeave", OnLeave)
 
 	self:RegisterForClicks("anyup")
 
@@ -251,12 +261,16 @@ local frame = function(settings, self, unit)
 
 	self:SetAttribute("*type2", "menu")
 
+	self:SetHeight(height)
+	self:SetWidth(width)
+
+
 	local hp = CreateFrame("StatusBar", nil, self)
 	hp:SetAllPoints(self)
 	hp:SetStatusBarTexture(texture)
 	hp:SetOrientation("VERTICAL")
 
-	local hpbg = hp:CreateTexture(nil, "BORDER")
+	local hpbg = hp:CreateTexture(nil, "BACKGROUND")
 	hpbg:SetAllPoints(hp)
 	hpbg:SetTexture(texture)
 	hpbg:SetAlpha(0.2)
@@ -264,6 +278,15 @@ local frame = function(settings, self, unit)
 	hp.bg = hpbg
 	self.Health = hp
 	self.OverrideUpdateHealth = Health_Update
+
+	local hl = hp:CreateTexture(nil, "OVERLAY")
+	hl:SetAllPoints(self)
+	hl:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+	hl:SetAlpha(0.5)
+	hl:SetBlendMode("ADD")
+	hl:Hide()
+
+	self.Highlight = hl
 
 	local name = hp:CreateFontString(nil, "OVERLAY")
 	name:SetPoint("CENTER")
@@ -327,7 +350,7 @@ local atrib = {
 	["showRaid"] = true,
 	["maxColumns"] = 8,
 	["unitsPerColumn"] = 5,
-	["columnSpacing"] = 5,
+	["columnSpacing"] = 6,
 	["yOffset"] = -10,
 	["columnAnchorPoint"] = "LEFT",
 	["groupingOrder"] = "1,2,3,4,5,6,7,8",
