@@ -37,8 +37,9 @@ local UnitDebuff = UnitDebuff
 
 local width, height = 32, 32
 
-local supernova = [[Interface\AddOns\oUF_Kanne2\media\nokiafc22.ttf]]
-local texture = [[Interface\AddOns\oUF_Kanne_Grid\gradient32x32.tga]]
+local supernova = [[Interface\AddOns\oUF_Kanne_Grid\media\nokiafc22.ttf]]
+local texture = [[Interface\AddOns\oUF_Kanne_Grid\media\gradient32x32.tga]]
+local hightlight = [[Interface\AddOns\oUF_Kanne_Grid\media\mouseoverHighlight.tga]]
 
 local PLAYERCLASS = select(2, UnitClass("player"))
 PLAYERCLASS = "PALADIN"
@@ -280,7 +281,7 @@ local frame = function(settings, self, unit)
 	border:SetPoint("RIGHT", self, "RIGHT", 4, 0)
 	border:SetPoint("TOP", self, "TOP", 0, 4)
 	border:SetPoint("BOTTOM", self, "BOTTOM", 0, -4)
-	border:SetTexture([[Interface\AddOns\oUF_Kanne2\media\Normal.tga]])
+	border:SetTexture([[Interface\AddOns\oUF_Kanne_Grid\media\Normal.tga]])
 	border:Hide()
 	border:SetVertexColor(1, 1, 1)
 
