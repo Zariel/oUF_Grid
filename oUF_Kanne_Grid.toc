@@ -1,4 +1,6 @@
 ## Interface: 20400
 ## Dependencies: oUF
+## Author: Zariel
+## Title: oUF_Grid
 
 core.lua

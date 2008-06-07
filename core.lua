@@ -196,8 +196,8 @@ end
 
 
 function f:PLAYER_TARGET_CHANGED()
-	local id = UnitInRaid("target") and UnitInRaid("target") + 1
-	local frame = id and oUF.units["raid" .. id]
+	local id = UnitInRaid("target") and UnitInRaid("target") + 1 or UnitInParty("target") and UnitInParty("target")
+	local frame = id and UnitInRaid("target") and oUF.units["raid" .. id] or UnitInParty("target") and oUF.units["party" .. id]
 	if not frame then
 		if coloredFrame then
 			if not oUF.units[coloredFrame].Dispell then
@@ -216,7 +216,7 @@ function f:PLAYER_TARGET_CHANGED()
 		frame.border:Show()
 	end
 
-	coloredFrame = "raid" .. id
+	coloredFrame = UnitInRaid("target") "raid" .. id or UnitInParty("target") and "party" .. id
 end
 
 local Name_Update = function(self, event, unit)
