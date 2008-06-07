@@ -96,6 +96,7 @@ f:SetScript("OnEvent", function(self, evnet, ...)
 	return self[event](self, ...)
 end)
 f:RegisterEvent("UNIT_AURA")
+f:RegisterEvent("PLAYER_TARGET_CHANGED")
 
 local name, rank, buffTexture, count, duration, timeLeft, dtype
 function f:UNIT_AURA(unit)
@@ -124,14 +125,24 @@ function f:UNIT_AURA(unit)
 	end
 
 	if dispellClass[PLAYERCLASS] then
-			if dispell and dispellClass[PLAYERCLASS][dispell] then
+		if dispell then
+			if dispellClass[PLAYERCLASS][dispell] then
 				local col = DebuffTypeColor[dispell]
-				frame.Health:SetStatusBarColor(col.r, col.g, col.b)
+				frame.border:Show()
+				frame.border:SetVertexColor(col.r, col.g, col.b)
 				frame.Dispell = true
-			else
-				frame.Dispell = false
-				frame.Health:SetStatusBarColor(unpack(colors.class[select(2, UnitClass(unit))]))
 			end
+		else
+			frame.border:SetVertexColor(1, 1, 1)
+			frame.Dispell = false
+			if coloredFrame then
+				if unit ~= coloredFrame then
+					frame.border:Hide()
+				end
+			else
+				frame.border:Hide()
+			end
+		end
 	end
 
 	if current and text then
@@ -142,15 +153,36 @@ function f:UNIT_AURA(unit)
 	end
 end
 
+function f:PLAYER_TARGET_CHANGED()
+	local id = UnitInRaid("target") and UnitInRaid("target") + 1
+	local frame = id and oUF.units["raid" .. id]
+	if not frame then
+		if coloredFrame then
+			if not oUF.units[coloredFrame].Dispell then
+				oUF.units[coloredFrame].border:Hide()
+			end
+		end
+		return
+	end
+
+	if coloredFrame and not oUF.units[coloredFrame].Dispell then
+		oUF.units[coloredFrame].border:Hide()
+	end
+
+	if not frame.Dispell then
+		frame.border:SetVertexColor(1,1,1)
+		frame.border:Show()
+	end
+	coloredFrame = "raid" .. id
+end
+
 local Name_Update = function(self, event, unit)
 	if self.unit ~= unit then return end
 
 	self.name = string.sub(UnitName(unit), 1, 3)
 	local class = select(2, UnitClass(unit))
 	self.Health:SetStatusBarColor(unpack(colors.class[class]))
-	if not self.Dispell then
-		self.Health.bg:SetVertexColor(unpack(colors.class[class]))
-	end
+	self.Health.bg:SetVertexColor(unpack(colors.class[class]))
 end
 
 local Health_Update = function(self, event, bar, unit, current, max)
@@ -166,34 +198,9 @@ local Health_Update = function(self, event, bar, unit, current, max)
 	else
 		self.Name:SetFormattedText("-%0.1f",math.floor(def/100)/10)
 	end
-
-	if not self.Dispell then
-		bar:SetStatusBarColor(unpack(colors.class[select(2, UnitClass(unit))]))
-	end
 end
 
 local frame = function(settings, self, unit)
-	self:RegisterEvent("PLAYER_TARGET_CHANGED")
-	self.PLAYER_TARGET_CHANGED = function(self)
-		local id = UnitInRaid("target") and UnitInRaid("target") + 1
-		if not id then
-			if coloredFrame then
-				oUF.units[coloredFrame].border:Hide()
-				coloredFrame = nil
-			end
-			return
-		end
-
-		if coloredFrame then
-			oUF.units[coloredFrame].border:Hide()
-		end
-
-		if not oUF.units["raid" .. id] then return end
-
-		oUF.units["raid" .. id].border:Show()
-		coloredFrame = "raid" .. id
-	end
-
 	self.menu = menu
 
 	self:EnableMouse(true)
@@ -237,10 +244,10 @@ local frame = function(settings, self, unit)
 	self.UNIT_NAME_UPDATE = Name_Update
 
 	local border = hp:CreateTexture(nil, "OVERLAY")
-	border:SetPoint("LEFT", self, "LEFT", -3, 0)
-	border:SetPoint("RIGHT", self, "RIGHT", 3, 0)
-	border:SetPoint("TOP", self, "TOP", 0, 3)
-	border:SetPoint("BOTTOM", self, "BOTTOM", 0, -3)
+	border:SetPoint("LEFT", self, "LEFT", -4, 0)
+	border:SetPoint("RIGHT", self, "RIGHT", 4, 0)
+	border:SetPoint("TOP", self, "TOP", 0, 4)
+	border:SetPoint("BOTTOM", self, "BOTTOM", 0, -4)
 	border:SetTexture([[Interface\AddOns\oUF_Kanne2\media\Normal.tga]])
 	border:Hide()
 	border:SetVertexColor(1, 1, 1)
