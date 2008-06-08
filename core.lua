@@ -43,6 +43,7 @@ local texture = [[Interface\AddOns\oUF_Kanne_Grid\media\gradient32x32.tga]]
 local hightlight = [[Interface\AddOns\oUF_Kanne_Grid\media\mouseoverHighlight.tga]]
 
 local PLAYERCLASS = select(2, UnitClass("player"))
+PLAYERCLASS = "PALADIN"
 local coloredFrame      -- Selected Raid Member
 
 local colors = {
@@ -140,7 +141,7 @@ function f:UNIT_AURA(unit)
 
 	local frame = oUF.units[unit]
 	if not frame.Icon then return end
-	local current, bTexture, dispell
+	local current, bTexture, dispell, dispellTexture
 	for i = 1, 40 do
 		name, rank, buffTexture, count, dtype, duration, timeLeft = UnitDebuff(unit, i)
 		if not name then break end
@@ -149,6 +150,7 @@ function f:UNIT_AURA(unit)
 			dispell = dispell or dtype
 			if dispellPiority[dtype] > dispellPiority[dispell] then
 				dispell = dtype
+				dispellTexture = buffTexture
 			end
 		end
 
@@ -171,8 +173,8 @@ function f:UNIT_AURA(unit)
 				frame.border:Show()
 				frame.border:SetVertexColor(col.r, col.g, col.b)
 				frame.Dispell = true
-				if not bTexture then
-					bTexture = buffTexture
+				if not bTexture and dispellTexture then
+					bTexture = dispellTexture
 				end
 			end
 		else
@@ -220,7 +222,7 @@ function f:PLAYER_TARGET_CHANGED()
 		frame.border:Show()
 	end
 
-	coloredFrame = UnitInRaid("target") "raid" .. id or UnitInParty("target") and "party" .. id
+	coloredFrame = UnitInRaid("target") and "raid" .. id or UnitInParty("target") and "party" .. id
 end
 
 local Name_Update = function(self, event, unit)
@@ -346,7 +348,6 @@ local frame = function(settings, self, unit)
 	self.inRangeAlpha = 1
 	self.outsideRangeAlpha = 0.3
 
-
 	return self
 end
 
@@ -377,6 +378,7 @@ local atrib = {
 	["columnAnchorPoint"] = "LEFT",
 	["groupingOrder"] = "1,2,3,4,5,6,7,8",
 	["startingIndex"] = 1,
+	["sortMethod"] = "NAME",
 }
 
 for k, v in pairs(atrib) do
