@@ -25,7 +25,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ]]
 
-local print = function(str) return ChatFrame1:AddMessage(tostring(str)) end
+local print = function(str) return ChatFrame3:AddMessage(tostring(str)) end
 local _G = getfenv(0)
 local oUF = _G.oUF
 
@@ -148,6 +148,7 @@ function f:UNIT_AURA(unit)
 
 		if dispellClass[PLAYERCLASS] and dispellClass[PLAYERCLASS][dtype] then
 			dispell = dispell or dtype
+			dispellTexture = dispellTexture or buffTexture
 			if dispellPiority[dtype] > dispellPiority[dispell] then
 				dispell = dtype
 				dispellTexture = buffTexture
@@ -174,6 +175,7 @@ function f:UNIT_AURA(unit)
 				frame.border:SetVertexColor(col.r, col.g, col.b)
 				frame.Dispell = true
 				if not bTexture and dispellTexture then
+					current = dispell
 					bTexture = dispellTexture
 				end
 			end
@@ -346,7 +348,7 @@ local frame = function(settings, self, unit)
 
 	self.Range = true
 	self.inRangeAlpha = 1
-	self.outsideRangeAlpha = 0.3
+	self.outsideRangeAlpha = 0.4
 
 	return self
 end
