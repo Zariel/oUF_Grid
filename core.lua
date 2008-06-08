@@ -34,6 +34,7 @@ local UnitClass = UnitClass
 local select = select
 local unpack = unpack
 local UnitDebuff = UnitDebuff
+local UnitInRaid = UnitInRaid
 
 local width, height = 32, 32
 
@@ -170,6 +171,9 @@ function f:UNIT_AURA(unit)
 				frame.border:Show()
 				frame.border:SetVertexColor(col.r, col.g, col.b)
 				frame.Dispell = true
+				if not bTexture then
+					bTexture = buffTexture
+				end
 			end
 		else
 			frame.border:SetVertexColor(1, 1, 1)
@@ -317,11 +321,14 @@ local frame = function(settings, self, unit)
 	border:Hide()
 	border:SetVertexColor(1, 1, 1)
 
+	self.border = border
+
 	local icon = hp:CreateTexture(nil, "OVERLAY")
 	icon:SetPoint("CENTER")
 	icon:SetHeight(20)
 	icon:SetWidth(20)
 	icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+	icon:Hide()
 
 	icon.ShowText = function(s)
 		self.Name:Hide()
@@ -332,9 +339,13 @@ local frame = function(settings, self, unit)
 		self.Name:Show()
 		s:Hide()
 	end
+
 	self.Icon = icon
 
-	self.border = border
+	self.Range = true
+	self.inRangeAlpha = 1
+	self.outsideRangeAlpha = 0.3
+
 
 	return self
 end
