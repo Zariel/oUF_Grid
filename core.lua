@@ -43,7 +43,6 @@ local texture = [[Interface\AddOns\oUF_Kanne_Grid\media\gradient32x32.tga]]
 local hightlight = [[Interface\AddOns\oUF_Kanne_Grid\media\mouseoverHighlight.tga]]
 
 local PLAYERCLASS = select(2, UnitClass("player"))
-PLAYERCLASS = "PALADIN"
 local coloredFrame      -- Selected Raid Member
 
 local colors = {
@@ -64,21 +63,27 @@ local colors = {
 -- mortal beacuse wound is dispellable etc.
 
 local debuffs = {
-	["Mortal Strike"] = 8,
+	["Viper Sting"] = 12,
+
 	["Wound Poison"] = 9,
+	["Mortal Strike"] = 8,
+
+	["Counterspell - Silenced"] = 11,
+	["Counterspell"] = 10,
+
+	["Blind"] = 10,
+	["Cyclone"] = 10,
+
+	["Entangling Roots"] = 7,
+	["Freezing Trap Effect"] = 7,
+
+	["Crippling Poison"] = 6,
+	["Hamstring"] = 5,
+	["Wingclip"] = 5,
+
 	["Fear"] = 3,
 	["Psycic Scream"] = 3,
 	["Howl of Terror"] = 3,
-	["Hamstring"] = 5,
-	["Wingclip"] = 5,
-	["Crippling Poison"] = 6,
-	["Blind"] = 10,
-	["Cyclone"] = 10,
-	["Entangling Roots"] = 7,
-	["Freezing Trap Effect"] = 7,
-	["Counterspell-Silenced"] = 10,
-	["Counterspell"] = 10,
-	["Viper Sting"] = 11,
 }
 
 local dispellClass = {
