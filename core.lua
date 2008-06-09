@@ -383,27 +383,23 @@ local style = setmetatable({
 oUF:RegisterStyle("Kanne-Grid", style)
 oUF:SetActiveStyle("Kanne-Grid")
 
-local raid = oUF:Spawn("header", "oUF_Raid")
+local raid = {}
 
-raid:SetPoint("LEFT", UIParent, "LEFT", 10, 0)
-raid:SetPoint("TOP", UIParent, "TOP", 0, -500)
-raid:Show()
+for i = 1, 8 do
+	local r = oUF:Spawn("header", "oUF_Raid" .. i)
+	r:SetPoint("TOP", UIParent, "TOP", 0, -500)
+	if i == 1 then
+		r:SetPoint("LEFT", UIParent, "LEFT", 10, 0)
+		r:SetAttribute("showParty", true)
+	else
+		r:SetPoint("LEFT", raid[i - 1], "RIGHT", 6, 0)
+	end
 
-local atrib = {
-	["showRaid"] = true,
-	["showParty"] = true,
-	["showPlayer"] = true,
-	["maxColumns"] = 8,
-	["unitsPerColumn"] = 5,
-	["columnSpacing"] = 6,
-	["yOffset"] = -10,
-	["columnAnchorPoint"] = "LEFT",
-	["groupBy"] = "GROUP",
-	["groupingOrder"] = "1,2,3,4,5,6,7,8",
-	["startingIndex"] = 1,
---	["sortMethod"] = "NAME",
-}
+	r:SetManyAttributes(
+		"showRaid", true,
+		"groupFilter", i,
+		"yOffset", -10,
+	)
 
-for k, v in pairs(atrib) do
-	raid:SetAttribute(k, v)
+	raid[i] = r
 end
