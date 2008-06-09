@@ -398,7 +398,7 @@ for i = 1, 8 do
 	r:SetManyAttributes(
 		"showRaid", true,
 		"groupFilter", i,
-		"yOffset", -10,
+		"yOffset", -10
 	)
 
 	raid[i] = r
