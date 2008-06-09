@@ -164,6 +164,7 @@ function f:UNIT_AURA(unit)
 
 	local frame = oUF.units[unit]
 
+	if not frame.Icon then return end
 	local current, bTexture, dispell, dispellTexture
 	for i = 1, 40 do
 		name, rank, buffTexture, count, dtype, duration, timeLeft = UnitDebuff(unit, i)
