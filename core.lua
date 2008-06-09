@@ -401,5 +401,6 @@ for i = 1, 8 do
 		"yOffset", -10
 	)
 
+	r:Show()
 	raid[i] = r
 end
