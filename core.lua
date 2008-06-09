@@ -43,6 +43,11 @@ local texture = [[Interface\AddOns\oUF_Kanne_Grid\media\gradient32x32.tga]]
 local hightlight = [[Interface\AddOns\oUF_Kanne_Grid\media\mouseoverHighlight.tga]]
 
 local PLAYERCLASS = select(2, UnitClass("player"))
+
+if UnitName("player") == "Kanne" then
+	PLAYERCLASS = "PALADIN"
+end
+
 local coloredFrame      -- Selected Raid Member
 
 local colors = {
@@ -67,12 +72,15 @@ local debuffs = {
 
 	["Wound Poison"] = 9,
 	["Mortal Strike"] = 8,
+	["Aimed Shot"] = 8,
 
 	["Counterspell - Silenced"] = 11,
 	["Counterspell"] = 10,
 
 	["Blind"] = 10,
 	["Cyclone"] = 10,
+
+	["Polymorph"] = 7,
 
 	["Entangling Roots"] = 7,
 	["Freezing Trap Effect"] = 7,
@@ -86,28 +94,38 @@ local debuffs = {
 	["Howl of Terror"] = 3,
 }
 
-local dispellClass = {
-	["PRIEST"] = {
-		["Magic"] = true,
-		["Disease"] = true,
-	},
-	["SHAMAN"] = {
-		["Poision"] = true,
-		["Disease"] = true,
-	},
-	["PALADIN"] = {
-		["Poison"] = true,
-		["Magic"] = true,
-		["Disease"] = true,
-	},
-	["MAGE"] = {
-		["Curse"] = true,
-	},
-	["DRUID"] = {
-		["Curse"] = true,
-		["Poison"] = true,
-	},
-}
+local dispellClass
+do
+	local t = {
+		["PRIEST"] = {
+			["Magic"] = true,
+			["Disease"] = true,
+		},
+		["SHAMAN"] = {
+			["Poision"] = true,
+			["Disease"] = true,
+		},
+		["PALADIN"] = {
+			["Poison"] = true,
+			["Magic"] = true,
+			["Disease"] = true,
+		},
+		["MAGE"] = {
+			["Curse"] = true,
+		},
+		["DRUID"] = {
+			["Curse"] = true,
+			["Poison"] = true,
+		},
+	}
+	if t[PLAYERCLASS] then
+		dispellClass = {}
+		for k, v in pairs(t[PLAYERCLASS]) do
+			dispellClass[k] = v
+		end
+		t = nil
+	end
+end
 
 local dispellPiority = {
 	["Magic"] = 4,
@@ -145,13 +163,13 @@ function f:UNIT_AURA(unit)
 	if not oUF.units[unit] then return end
 
 	local frame = oUF.units[unit]
-	if not frame.Icon then return end
+
 	local current, bTexture, dispell, dispellTexture
 	for i = 1, 40 do
 		name, rank, buffTexture, count, dtype, duration, timeLeft = UnitDebuff(unit, i)
 		if not name then break end
 
-		if dispellClass[PLAYERCLASS] and dispellClass[PLAYERCLASS][dtype] then
+		if dispellClass and dispellClass[dtype] then
 			dispell = dispell or dtype
 			dispellTexture = dispellTexture or buffTexture
 			if dispellPiority[dtype] > dispellPiority[dispell] then
@@ -172,9 +190,9 @@ function f:UNIT_AURA(unit)
 		end
 	end
 
-	if dispellClass[PLAYERCLASS] then
+	if dispellClass then
 		if dispell then
-			if dispellClass[PLAYERCLASS][dispell] then
+			if dispellClass[dispell] then
 				local col = DebuffTypeColor[dispell]
 				frame.border:Show()
 				frame.border:SetVertexColor(col.r, col.g, col.b)
@@ -210,7 +228,7 @@ end
 
 function f:PLAYER_TARGET_CHANGED()
 	local id = UnitInRaid("target") and UnitInRaid("target") + 1 or UnitInParty("target") and UnitInParty("target")
-	local frame = id and UnitInRaid("target") and oUF.units["raid" .. id] or UnitInParty("target") and oUF.units["party" .. id]
+	local frame = id and UnitInRaid("target") and oUF.units["raid" .. id] or id and UnitInParty("target") and oUF.units["party" .. id]
 	if not frame then
 		if coloredFrame then
 			if not oUF.units[coloredFrame].Dispell then
@@ -283,10 +301,6 @@ local frame = function(settings, self, unit)
 	self:SetBackdropColor(0, 0, 0, 1)
 
 	self:SetAttribute("*type2", "menu")
-
-	self:SetHeight(height)
-	self:SetWidth(width)
-
 
 	local hp = CreateFrame("StatusBar", nil, self)
 	hp:SetAllPoints(self)
@@ -376,8 +390,8 @@ raid:Show()
 
 local atrib = {
 	["showRaid"] = true,
+	["showParty"] = true,
 	["showPlayer"] = true,
-	["showSolo"] = true,
 	["maxColumns"] = 8,
 	["unitsPerColumn"] = 5,
 	["columnSpacing"] = 6,
