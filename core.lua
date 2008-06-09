@@ -398,9 +398,10 @@ local atrib = {
 	["columnSpacing"] = 6,
 	["yOffset"] = -10,
 	["columnAnchorPoint"] = "LEFT",
+	["groupBy"] = "GROUP",
 	["groupingOrder"] = "1,2,3,4,5,6,7,8",
 	["startingIndex"] = 1,
-	["sortMethod"] = "NAME",
+--	["sortMethod"] = "NAME",
 }
 
 for k, v in pairs(atrib) do
