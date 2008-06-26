@@ -166,6 +166,8 @@ f:SetScript("OnEvent", function(self, evnet, ...)
 end)
 f:RegisterEvent("UNIT_AURA")
 f:RegisterEvent("PLAYER_TARGET_CHANGED")
+f:RegisterEvent("RAID_ROSTER_UPDATE")
+f:RegisterEvent("PLAYER_LOGIN")
 
 local name, rank, buffTexture, count, duration, timeLeft, dtype
 function f:UNIT_AURA(unit)
@@ -419,3 +421,51 @@ for i = 1, 8 do
 	r:Show()
 	raid[i] = r
 end
+
+-- BG handling
+
+local SubGroups = function()
+	local t = {}
+	for i = 1, GetNumRaidMembers() do
+		local s = select(3, GetRaidRosterInfo(i))
+		t[s] = (t[s] or 0) + 1
+	end
+	return t
+end
+-- BG
+local bg = CreateFrame("Frame")
+bg:SetPoint("TOPLEFT", raid[1], "TOPLEFT", - 8, 8)
+bg:SetBackdrop({
+	bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = true, tileSize = 16,
+	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
+	insets = {left = 2, right = 2, top = 2, bottom = 2}
+})
+bg:SetBackdropColor(0, 0, 0, 0.6)
+bg:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+bg:SetFrameLevel(0)
+bg:Show()
+
+function f:RAID_ROSTER_UPDATE()
+	if not UnitInRaid("player") then
+		return bg:Hide()
+	else
+		bg:Show()
+	end
+
+	local roster = SubGroups()
+
+	for k, v in ipairs(roster) do
+		if type(v) == nil then
+			ChatFrame1:AddMessage(string.format("Nil value at index %d", k))
+		end
+	end
+
+	local h = math.max(unpack(roster))
+	local w = #roster
+
+	bg:SetPoint("RIGHT", raid[w], "RIGHT", 8, 0)
+
+	bg:SetHeight(29 * h)
+end
+
+f.PLAYER_LOGIN = f.RAID_ROSTER_UPDATE
