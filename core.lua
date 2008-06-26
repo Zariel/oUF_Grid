@@ -63,6 +63,11 @@ local colors = {
 		["WARRIOR"] = { 0.78, 0.61, 0.43 },
 	},
 }
+setmetatable(colors.class, {
+	__index = function(self, key)
+		return self.WARRIOR
+	end
+})
 
 -- Debuff priority, with the same number = same mechanic, i gave wounder >
 -- mortal beacuse wound is dispellable etc.
@@ -239,6 +244,7 @@ function f:PLAYER_TARGET_CHANGED()
 			if not oUF.units[coloredFrame].Dispell then
 				oUF.units[coloredFrame].border:Hide()
 			end
+			coloredFrame = nil
 		end
 		return
 	end
@@ -247,7 +253,7 @@ function f:PLAYER_TARGET_CHANGED()
 		oUF.units[coloredFrame].border:Hide()
 	end
 
-	if not frame.Dispell then
+	if not frame.Dispell and frame.border then
 		frame.border:SetVertexColor(1, 1, 1)
 		frame.border:Show()
 	end
@@ -259,9 +265,8 @@ local Name_Update = function(self, event, unit)
 	if self.unit ~= unit then return end
 
 	self.name = string.sub(UnitName(unit), 1, 3)
-	local class = select(2, UnitClass(unit))
-	self.Health:SetStatusBarColor(unpack(colors.class[class]))
-	self.Health.bg:SetVertexColor(unpack(colors.class[class]))
+	self.Health:SetStatusBarColor(GetClassColor(unit))
+	self.Health.bg:SetVertexColor(GetClassColor(unit))
 end
 
 local Health_Update = function(self, event, bar, unit, current, max)
@@ -281,7 +286,7 @@ local Health_Update = function(self, event, bar, unit, current, max)
 	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
 		bar.bg:SetVertexColor(0.4, 0.4, 0.4)
 	else
-		bar.bg:SetVertexColor((unpack(colors.class[select(2, UnitClass(unit))])))
+		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
 end
 
@@ -336,8 +341,7 @@ local frame = function(settings, self, unit)
 	self.Highlight = hl
 
 	local name = hp:CreateFontString(nil, "OVERLAY")
-	name:SetPoint("LEFT")
-	name:SetPoint("RIGHT")
+	name:SetPoint("CENTER")
 	name:SetJustifyH("CENTER")
 	name:SetFont(supernova, 10, "THINOUTLINE")
 	name:SetShadowColor(0,0,0,1)
