@@ -134,6 +134,10 @@ local dispellPiority = {
 	["Curse"] = 2,
 }
 
+local GetClassColor = function(unit)
+	return unpack(colors.class[select(2, UnitClass(unit))])
+end
+
 local ColorGradient = function(perc, r1, g1, b1, r2, g2, b2, r3, g3, b3)
 	if perc >= 1 then
 		return {r3, g3, b3}
@@ -273,6 +277,12 @@ local Health_Update = function(self, event, bar, unit, current, max)
 	else
 		self.Name:SetFormattedText("-%0.1f",math.floor(def/100)/10)
 	end
+
+	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
+		bar.bg:SetVertexColor(0.4, 0.4, 0.4)
+	else
+		bar.bg:SetVertexColor((unpack(colors.class[select(2, UnitClass(unit))])))
+	end
 end
 
 local OnEnter = function(self)
@@ -326,7 +336,8 @@ local frame = function(settings, self, unit)
 	self.Highlight = hl
 
 	local name = hp:CreateFontString(nil, "OVERLAY")
-	name:SetPoint("CENTER")
+	name:SetPoint("LEFT")
+	name:SetPoint("RIGHT")
 	name:SetJustifyH("CENTER")
 	name:SetFont(supernova, 10, "THINOUTLINE")
 	name:SetShadowColor(0,0,0,1)
