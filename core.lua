@@ -455,7 +455,7 @@ function f:RAID_ROSTER_UPDATE()
 	local roster = SubGroups()
 
 	for k, v in ipairs(roster) do
-		if type(v) == nil then
+		if type(v) == "nil" then
 			ChatFrame1:AddMessage(string.format("Nil value at index %d", k))
 		end
 	end
