@@ -355,8 +355,8 @@ if libheal then
 			local frame = oUF.units[unit]
 
 			if not frame then
-				printf("No Frame: unit = %s name = %", unit, name)
-				printf("Unitexists:", UnitExists(unit))
+				printf("No Frame: unit = %s name = %s", tostring(unit), tostring(name))
+				printf("Unitexists: %s", UnitExists(unit))
 				print("===========================")
 			end
 
