@@ -2,5 +2,8 @@
 ## Dependencies: oUF
 ## Author: Zariel
 ## Title: oUF_Grid
+## OptionalDeps: LibHealComm-3.0
+
+lib\LibHealComm-3.0\lib.xml
 
 core.lua
