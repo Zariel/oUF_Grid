@@ -239,7 +239,6 @@ function f:UNIT_AURA(unit)
 	end
 end
 
-
 function f:PLAYER_TARGET_CHANGED()
 	local id = UnitInRaid("target") and UnitInRaid("target") + 1 or UnitInParty("target") and UnitInParty("target")
 	local frame = id and UnitInRaid("target") and oUF.units["raid" .. id] or id and UnitInParty("target") and oUF.units["party" .. id]
@@ -265,20 +264,22 @@ function f:PLAYER_TARGET_CHANGED()
 	coloredFrame = UnitInRaid("target") and "raid" .. id or UnitInParty("target") and "party" .. id
 end
 
+local Roster, invRoster = {}, {}
 
-local invRoster = setmetatable({}, {
+setmetatable(invRoster, {
 	__index = function(self, key)
 		local name, server = UnitName(key)
 		if name == playername then server = playerserver end
 		if server and server ~= "" then
 			name = name .. "-" .. server
 		end
+		rawset(Roster, name, key)
 		rawset(self, key, name)
 		return name
 	end
 })
 
-local Roster = setmetatable({},{
+setmetatable(Roster, {
 	__index = function(self, key)
 		-- Dont want to do this :(
 		if key == playername then
@@ -288,8 +289,10 @@ local Roster = setmetatable({},{
 		for unit in pairs(oUF.units) do
 			local name, server = UnitName(unit)
 			if name == key and server and server ~= "" then
-				self[key] = name .. "-" .. server
-				return name .. "-" .. server
+				name = name .. "-" .. server
+				rawset(self, key, name)
+				rawset(invRoster, name, key)
+				return name
 			end
 		end
 		return
@@ -345,6 +348,12 @@ if libheal then
 			local unit = Roster[name]
 			if not unit then return end
 			local f = oUF.units[unit]
+
+			if not f then
+				printf("No Frame: unit = %s name = %", unit, name)
+				printf("Unitexists:", UnitExists(unit))
+				print("===========================")
+			end
 
 			local incHeal = libheal:UnitIncomingHealGet(name, GetTime() + 4) or 0
 			if incHeal > 0 then
