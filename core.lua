@@ -378,7 +378,7 @@ local Name_Update = function(self, event, unit)
 
 	local n, s = UnitName(unit)
 	self.name = string.sub(n, 1, 3)
-	self.Health:SetStatusBarColor(GetClassColor(unit))
+--	self.Health:SetStatusBarColor(GetClassColor(unit))
 	self.Health.bg:SetVertexColor(GetClassColor(unit))
 
 	if s and s ~= "" then
@@ -447,11 +447,13 @@ local frame = function(settings, self, unit)
 	hp:SetStatusBarTexture(texture)
 	hp:SetOrientation("VERTICAL")
 	hp:SetFrameLevel(5)
+	hp:SetStatusBarColor(0, 0, 0)
+	hp:SetAlpha(0.8)
 
 	local hpbg = hp:CreateTexture(nil, "BACKGROUND")
 	hpbg:SetAllPoints(hp)
 	hpbg:SetTexture(texture)
-	hpbg:SetAlpha(0.2)
+	hpbg:SetAlpha(1)
 
 	local heal = CreateFrame("StatusBar", nil, self)
 	heal:SetAllPoints(self)
