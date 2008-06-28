@@ -265,6 +265,85 @@ function f:PLAYER_TARGET_CHANGED()
 	coloredFrame = UnitInRaid("target") and "raid" .. id or UnitInParty("target") and "party" .. id
 end
 
+local Roster = {}
+local invRoster = {}
+
+local UpdateRoster = function()
+	for i = 1, 40 do
+		local unit = "raid" .. i
+		local e = UnitExists(unit)
+		if e then
+			local name, server = UnitName(unit)
+			name = name .. "-" .. server
+			roster[name] = unit
+			invRoster[unit] = name
+		else
+			local n = invRoster[unit]
+			Roster[n] = nil
+			invRoster[unit] = nil
+		end
+	end
+	for i = 1, 4 do
+		local unit = "party" .. i
+		local e = UnitExists(unit)
+		if e then
+			local name, server = UnitName(unit)
+			name = name .. "-" .. server
+			roster[name] = unit
+			invRoster[unit] = name
+		else
+			local n = invRoster[unit]
+			Roster[n] = nil
+			invRoster[unit] = nil
+		end
+	end
+end
+
+if libheal then
+	local HealInc = function(event, healerName, healSize, endTime, ...)
+		for i = 1, select("#", ...) do
+			local unit = Roster[select(i, ...)]
+			local frame = oUF.units[unit]
+
+			if not frame then return end
+
+			local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime() + 3))
+			if incHeal then
+				local mod = LibHeal:UnitHealModifierGet(unit)
+				local heal = (mod * incHeal) + UnitHealth(unit)
+				frame.heal:SetValue(heal)
+				frame.heal:Show()
+				print(incHeal)
+			else
+				frame.heal:Hide()
+			end
+		end
+	end
+
+	local StopHeal = function(event, healerName, healSize, succeeded, ...)
+		for i = 1, select("#", ...) do
+			local unit = Roster[select(i, ...)]
+			local frame = oUF.units[unit]
+
+			if not frame then return end
+
+			local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime() + 3))
+			if incHeal then
+				local mod = LibHeal:UnitHealModifierGet(unit)
+				local heal = (mod * incHeal) + UnitHealth(unit)
+				frame.heal:SetValue(heal)
+				frame.heal:Show()
+				print(incHeal)
+			else
+				frame.heal:Hide()
+			end
+		end
+	end
+
+	libheal.RegisterCallback("", "HealComm_DirectHealStop", StopHeal)
+	libheal.RegisterCallback("", "HealComm_DirectHealStart", HealInc)
+end
+
 local Name_Update = function(self, event, unit)
 	if self.unit ~= unit then return end
 
@@ -291,19 +370,6 @@ local Health_Update = function(self, event, bar, unit, current, max)
 		bar.bg:SetVertexColor(0.4, 0.4, 0.4)
 	else
 		bar.bg:SetVertexColor(GetClassColor(unit))
-	end
-
-	if self.heal then
-		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime()))
-		if incHeal then
-			local mod = LibHeal:UnitHealModifierGet(unit)
-			local heal = (mod * incHeal) + current
-			self.heal:SetValue(heal)
-			self.heal:Show()
-			print(incHeal)
-		else
-			self.heal:Hide()
-		end
 	end
 end
 
@@ -435,6 +501,7 @@ for i = 1, 8 do
 	if i == 1 then
 		r:SetPoint("LEFT", UIParent, "LEFT", 10, 0)
 		r:SetAttribute("showParty", true)
+		r:SetAttribute("showSolo", true)
 	else
 		r:SetPoint("LEFT", raid[i - 1], "RIGHT", 6, 0)
 	end
@@ -472,6 +539,7 @@ bg:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
 bg:SetFrameLevel(0)
 bg:Show()
 
+
 function f:RAID_ROSTER_UPDATE()
 	if not UnitInRaid("player") then
 		return bg:Hide()
@@ -483,7 +551,7 @@ function f:RAID_ROSTER_UPDATE()
 
 	for k, v in ipairs(roster) do
 		if type(v) == "nil" then
-			ChatFrame1:AddMessage(string.format("Nil value at index %d", k))
+			print(string.format("Nil value at index %d", k))
 		end
 	end
 
@@ -493,6 +561,10 @@ function f:RAID_ROSTER_UPDATE()
 	bg:SetPoint("RIGHT", raid[w], "RIGHT", 8, 0)
 
 	bg:SetHeight(29 * h)
+
+	if libheal then
+		UpdateRoster()
+	end
 end
 
 f.PLAYER_LOGIN = f.RAID_ROSTER_UPDATE
