@@ -273,9 +273,12 @@ setmetatable(invRoster, {
 		if server and server ~= "" then
 			name = name .. "-" .. server
 		end
-		rawset(Roster, name, key)
-		rawset(self, key, name)
-		return name
+		if name then
+			rawset(Roster, name, key)
+			rawset(self, key, name)
+			return name
+		end
+		return
 	end
 })
 
@@ -312,8 +315,10 @@ local UpdateRoster = function()
 					name = name .. "-" .. server
 				end
 
-				Roster[name] = unit
-				invRoster[unit] = name
+				if name then
+					Roster[name] = unit
+					invRoster[unit] = name
+				end
 			else
 				local n = invRoster[unit]
 				if n then
@@ -406,7 +411,7 @@ local Health_Update = function(self, event, bar, unit, current, max)
 	end
 
 	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
-		bar.bg:SetVertexColor(0.4, 0.4, 0.4)
+		bar.bg:SetVertexColor(0.3, 0.3, 0.3)
 	else
 		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
