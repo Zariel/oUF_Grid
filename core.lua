@@ -294,12 +294,13 @@ local Health_Update = function(self, event, bar, unit, current, max)
 	end
 
 	if self.heal then
-		local incHeal = select(2, libheal:UnitIncomingHealGetr(unit, GetTime()))
-		if incHeal > 0 then
+		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime()))
+		if incHeal then
 			local mod = LibHeal:UnitHealModifierGet(unit)
 			local heal = (mod * incHeal) + current
 			self.heal:SetValue(heal)
 			self.heal:Show()
+			print(incHeal)
 		else
 			self.heal:Hide()
 		end
