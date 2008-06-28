@@ -263,9 +263,19 @@ function f:PLAYER_TARGET_CHANGED()
 	coloredFrame = UnitInRaid("target") and "raid" .. id or UnitInParty("target") and "party" .. id
 end
 
-local Roster = {}
-local invRoster = {}
 
+local invRoster = {}
+local Roster = setmetatable({},{
+	__index = function(self, key)
+		local name, server = UnitName(key)
+		if server and server ~= "" then
+			name = name .. "-" .. server
+		end
+		rawset(self, key, name)
+		invRoster[name] = key
+		return name
+	end
+})
 local UpdateRoster = function()
 	local unit
 	local e
