@@ -347,9 +347,9 @@ if libheal then
 			local name = tostring(select(i, ...))
 			local unit = Roster[name]
 			if not unit then return end
-			local f = oUF.units[unit]
+			local frame = oUF.units[unit]
 
-			if not f then
+			if not frame then
 				printf("No Frame: unit = %s name = %", unit, name)
 				printf("Unitexists:", UnitExists(unit))
 				print("===========================")
@@ -360,10 +360,10 @@ if libheal then
 				print("Heals inc: " .. incHeal)
 				local mod = libheal:UnitHealModifierGet(name)
 				local val = (mod * incHeal)
-				f.heal:SetValue(val)
-				f.heal:Show()
+				frame.heal:SetValue(val)
+				frame.heal:Show()
 			else
-				f.heal:Hide()
+				frame.heal:Hide()
 			end
 		end
 	end
@@ -572,7 +572,6 @@ bg:SetBackdropColor(0, 0, 0, 0.6)
 bg:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
 bg:SetFrameLevel(0)
 bg:Show()
-
 
 function f:RAID_ROSTER_UPDATE()
 	if not UnitInRaid("player") then
