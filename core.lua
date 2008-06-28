@@ -274,12 +274,22 @@ local UpdateRoster = function()
 		local e = UnitExists(unit)
 		if e then
 			local name, server = UnitName(unit)
-			name = name .. "-" .. server
-			roster[name] = unit
+			local raw
+			if server and server ~= "" then
+				name = name .. "-" .. server
+			end
+		--	if raw then
+		--		Roster[raw] = unit
+		--		invRoster[unit] = raw
+		--	end
+			
+			Roster[name] = unit
 			invRoster[unit] = name
 		else
 			local n = invRoster[unit]
-			Roster[n] = nil
+			if n then
+				Roster[n] = nil
+			end
 			invRoster[unit] = nil
 		end
 	end
@@ -288,8 +298,7 @@ local UpdateRoster = function()
 		local e = UnitExists(unit)
 		if e then
 			local name, server = UnitName(unit)
-			name = name .. "-" .. server
-			roster[name] = unit
+			Roster[name] = unit
 			invRoster[unit] = name
 		else
 			local n = invRoster[unit]
@@ -302,7 +311,9 @@ end
 if libheal then
 	local HealInc = function(event, healerName, healSize, endTime, ...)
 		for i = 1, select("#", ...) do
+			print(select(i, ...))
 			local unit = Roster[select(i, ...)]
+			print(unit)
 			local frame = oUF.units[unit]
 
 			if not frame then return end
@@ -419,6 +430,7 @@ local frame = function(settings, self, unit)
 		heal:SetOrientation("VERTICAL")
 		heal:SetStatusBarColor(0, 1, 0)
 		heal:SetFrameLevel(3)
+		heal:Hide()
 
 		self.heal = heal
 	end
@@ -501,7 +513,6 @@ for i = 1, 8 do
 	if i == 1 then
 		r:SetPoint("LEFT", UIParent, "LEFT", 10, 0)
 		r:SetAttribute("showParty", true)
-		r:SetAttribute("showSolo", true)
 	else
 		r:SetPoint("LEFT", raid[i - 1], "RIGHT", 6, 0)
 	end
