@@ -29,6 +29,8 @@ local print = function(str) return ChatFrame3:AddMessage(tostring(str)) end
 local _G = getfenv(0)
 local oUF = _G.oUF
 
+local libheal = LibStub("LibHealComm-3.0", true)
+
 local UnitName = UnitName
 local UnitClass = UnitClass
 local select = select
@@ -290,6 +292,18 @@ local Health_Update = function(self, event, bar, unit, current, max)
 	else
 		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
+
+	if self.heal then
+		local incHeal = select(2, libheal:UnitIncomingHealGetr(unit, GetTime()))
+		if incHeal > 0 then
+			local mod = LibHeal:UnitHealModifierGet(unit)
+			local heal = (mod * incHeal) + current
+			self.heal:SetValue(heal)
+			self.heal:Show()
+		else
+			self.heal:Hide()
+		end
+	end
 end
 
 local OnEnter = function(self)
@@ -324,11 +338,23 @@ local frame = function(settings, self, unit)
 	hp:SetAllPoints(self)
 	hp:SetStatusBarTexture(texture)
 	hp:SetOrientation("VERTICAL")
+	hp:SetFrameLevel(5)
 
 	local hpbg = hp:CreateTexture(nil, "BACKGROUND")
 	hpbg:SetAllPoints(hp)
 	hpbg:SetTexture(texture)
 	hpbg:SetAlpha(0.2)
+
+	if libheal then
+		local heal = CreateFrame("StatusBar", nil, self)
+		heal:SetAllPoints(self)
+		heal:SetStatusBarTexture(texture)
+		heal:SetOrientation("VERTICAL")
+		heal:SetStatusBarColor(0, 1, 0)
+		heal:SetFrameLevel(3)
+
+		self.heal = heal
+	end
 
 	hp.bg = hpbg
 	self.Health = hp
