@@ -334,7 +334,7 @@ local UpdateRoster = function()
 				local n = invRoster[unit]
 				if n then
 					Roster[n] = nil
-			end
+				end
 			invRoster[unit] = nil
 			end
 		end
@@ -384,6 +384,8 @@ local Name_Update = function(self, event, unit)
 	if s and s ~= "" then
 		n = n .. "-" ..s
 	end
+
+	if not n or not s then return end
 
 	Roster[unit] = n
 	invRoster[n] = unit
