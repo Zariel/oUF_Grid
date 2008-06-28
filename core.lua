@@ -281,18 +281,15 @@ local UpdateRoster = function()
 
 				Roster[name] = unit
 				invRoster[unit] = name
-				printf("Added %s - %s", name, unit)
 			else
 				local n = invRoster[unit]
 				if n then
 					Roster[n] = nil
 				end
 				invRoster[unit] = nil
-				printf("Removed %s - %s", tostring(n), unit)
 			end
 		end
-	end
-	if GetNumPartyMembers() > 0 then
+	elseif GetNumPartyMembers() > 0 then
 		for i = 1, 4 do
 			unit = "party" .. i
 			e = UnitExists(unit)
@@ -313,12 +310,10 @@ end
 
 if libheal then
 	local HealInc = function(event, healerName, healSize, endTime, ...)
-		print("event: ".. event)
 		for i = 1, select("#", ...) do
 			local name = tostring(select(i, ...))
 			local unit = Roster[name]
 			if not unit then return end
-			printf("Unit: %s", unit)
 			local f = oUF.units[unit]
 
 			local incHeal = libheal:UnitIncomingHealGet(name, GetTime() + 4) or 0
