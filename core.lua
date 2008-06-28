@@ -26,6 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ]]
 
 local print = function(str) return ChatFrame3:AddMessage(tostring(str)) end
+local printf = function(...) return ChatFrame3:AddMessage(string.format(...)) end
 local _G = getfenv(0)
 local oUF = _G.oUF
 
@@ -166,10 +167,7 @@ local f = CreateFrame("Frame")
 f:SetScript("OnEvent", function(self, evnet, ...)
 	return self[event](self, ...)
 end)
-f:RegisterEvent("UNIT_AURA")
-f:RegisterEvent("PLAYER_TARGET_CHANGED")
-f:RegisterEvent("RAID_ROSTER_UPDATE")
-f:RegisterEvent("PLAYER_LOGIN")
+
 
 local name, rank, buffTexture, count, duration, timeLeft, dtype
 function f:UNIT_AURA(unit)
@@ -274,15 +272,10 @@ local UpdateRoster = function()
 		local e = UnitExists(unit)
 		if e then
 			local name, server = UnitName(unit)
-			local raw
 			if server and server ~= "" then
 				name = name .. "-" .. server
 			end
-		--	if raw then
-		--		Roster[raw] = unit
-		--		invRoster[unit] = raw
-		--	end
-			
+
 			Roster[name] = unit
 			invRoster[unit] = name
 		else
@@ -302,7 +295,9 @@ local UpdateRoster = function()
 			invRoster[unit] = name
 		else
 			local n = invRoster[unit]
-			Roster[n] = nil
+			if n then
+				Roster[n] = nil
+			end
 			invRoster[unit] = nil
 		end
 	end
@@ -310,57 +305,45 @@ end
 
 if libheal then
 	local HealInc = function(event, healerName, healSize, endTime, ...)
+		print("event: ".. event)
 		for i = 1, select("#", ...) do
-			print(select(i, ...))
-			local unit = Roster[select(i, ...)]
-			print(unit)
-			local frame = oUF.units[unit]
+			local name = tostring(select(i, ...))
+			local unit = tostring(Roster[name])
+			if not unit then return end
+			printf("%s - %s", name, unit)
+			local f = oUF.units[unit]
 
-			if not frame then return end
-
-			local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime() + 3))
+			local incHeal = select(2, libheal:UnitIncomingHealGet(name, GetTime()))
+			--print(incHeal)
 			if incHeal then
-				local mod = LibHeal:UnitHealModifierGet(unit)
-				local heal = (mod * incHeal) + UnitHealth(unit)
-				frame.heal:SetValue(heal)
-				frame.heal:Show()
-				print(incHeal)
+				local mod = libheal:UnitHealModifierGet(name)
+				local val = (mod * incHeal) + UnitHealth(unit)
+				f.heal:SetValue(val)
+				f.heal:Show()
 			else
-				frame.heal:Hide()
+				f.heal:Hide()
 			end
 		end
 	end
 
-	local StopHeal = function(event, healerName, healSize, succeeded, ...)
-		for i = 1, select("#", ...) do
-			local unit = Roster[select(i, ...)]
-			local frame = oUF.units[unit]
-
-			if not frame then return end
-
-			local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime() + 3))
-			if incHeal then
-				local mod = LibHeal:UnitHealModifierGet(unit)
-				local heal = (mod * incHeal) + UnitHealth(unit)
-				frame.heal:SetValue(heal)
-				frame.heal:Show()
-				print(incHeal)
-			else
-				frame.heal:Hide()
-			end
-		end
-	end
-
-	libheal.RegisterCallback("", "HealComm_DirectHealStop", StopHeal)
+	libheal.RegisterCallback("", "HealComm_DirectHealStop", HealInc)
 	libheal.RegisterCallback("", "HealComm_DirectHealStart", HealInc)
 end
 
 local Name_Update = function(self, event, unit)
 	if self.unit ~= unit then return end
 
-	self.name = string.sub(UnitName(unit), 1, 3)
+	local n, s = UnitName(unit)
+	self.name = string.sub(n, 1, 3)
 	self.Health:SetStatusBarColor(GetClassColor(unit))
 	self.Health.bg:SetVertexColor(GetClassColor(unit))
+
+	if s and s ~= "" then
+		n = n .. "-" ..s
+	end
+
+	Roster[unit] = n
+	invRoster[n] = unit
 end
 
 local Health_Update = function(self, event, bar, unit, current, max)
@@ -579,3 +562,7 @@ function f:RAID_ROSTER_UPDATE()
 end
 
 f.PLAYER_LOGIN = f.RAID_ROSTER_UPDATE
+f:RegisterEvent("UNIT_AURA")
+f:RegisterEvent("PLAYER_TARGET_CHANGED")
+f:RegisterEvent("RAID_ROSTER_UPDATE")
+f:RegisterEvent("PLAYER_LOGIN")
