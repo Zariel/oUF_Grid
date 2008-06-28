@@ -264,18 +264,30 @@ function f:PLAYER_TARGET_CHANGED()
 end
 
 
-local invRoster = {}
-local Roster = setmetatable({},{
+local invRoster = setmetatable({}, {
 	__index = function(self, key)
 		local name, server = UnitName(key)
 		if server and server ~= "" then
 			name = name .. "-" .. server
 		end
 		rawset(self, key, name)
-		invRoster[name] = key
 		return name
 	end
 })
+local Roster = setmetatable({},{
+	__index = function(self, key)
+		-- Dont want to do this :(
+		for unit in pairs(oUF.units) do
+			local name, server = UnitName(unit)
+			if name == key and server and server ~= "" then
+				self[key] = name .. "-" .. server
+				return name .. "-" .. server
+			end
+		end
+		return
+	end
+})
+
 local UpdateRoster = function()
 	local unit
 	local e
