@@ -267,38 +267,46 @@ local Roster = {}
 local invRoster = {}
 
 local UpdateRoster = function()
-	for i = 1, 40 do
-		local unit = "raid" .. i
-		local e = UnitExists(unit)
-		if e then
-			local name, server = UnitName(unit)
-			if server and server ~= "" then
-				name = name .. "-" .. server
-			end
+	local unit
+	local e
+	if GetNumRaidMembers() > 0 then
+		for i = 1, 40 do
+			unit = "raid" .. i
+			e = UnitExists(unit)
+			if e then
+				local name, server = UnitName(unit)
+				if server and server ~= "" then
+					name = name .. "-" .. server
+				end
 
-			Roster[name] = unit
-			invRoster[unit] = name
-		else
-			local n = invRoster[unit]
-			if n then
-				Roster[n] = nil
+				Roster[name] = unit
+				invRoster[unit] = name
+				printf("Added %s - %s", name, unit)
+			else
+				local n = invRoster[unit]
+				if n then
+					Roster[n] = nil
+				end
+				invRoster[unit] = nil
+				printf("Removed %s - %s", tostring(n), unit)
 			end
-			invRoster[unit] = nil
 		end
 	end
-	for i = 1, 4 do
-		local unit = "party" .. i
-		local e = UnitExists(unit)
-		if e then
-			local name, server = UnitName(unit)
-			Roster[name] = unit
-			invRoster[unit] = name
-		else
-			local n = invRoster[unit]
-			if n then
-				Roster[n] = nil
+	if GetNumPartyMembers() > 0 then
+		for i = 1, 4 do
+			unit = "party" .. i
+			e = UnitExists(unit)
+			if e then
+				local name, server = UnitName(unit)
+				Roster[name] = unit
+				invRoster[unit] = name
+			else
+				local n = invRoster[unit]
+				if n then
+					Roster[n] = nil
 			end
 			invRoster[unit] = nil
+			end
 		end
 	end
 end
@@ -308,16 +316,16 @@ if libheal then
 		print("event: ".. event)
 		for i = 1, select("#", ...) do
 			local name = tostring(select(i, ...))
-			local unit = tostring(Roster[name])
+			local unit = Roster[name]
 			if not unit then return end
-			printf("%s - %s", name, unit)
+			printf("Unit: %s", unit)
 			local f = oUF.units[unit]
 
-			local incHeal = select(2, libheal:UnitIncomingHealGet(name, GetTime()))
-			--print(incHeal)
-			if incHeal then
+			local incHeal = libheal:UnitIncomingHealGet(name, GetTime() + 4) or 0
+			if incHeal > 0 then
+				print("Heals inc: " .. incHeal)
 				local mod = libheal:UnitHealModifierGet(name)
-				local val = (mod * incHeal) + UnitHealth(unit)
+				local val = (mod * incHeal)
 				f.heal:SetValue(val)
 				f.heal:Show()
 			else
@@ -328,6 +336,7 @@ if libheal then
 
 	libheal.RegisterCallback("", "HealComm_DirectHealStop", HealInc)
 	libheal.RegisterCallback("", "HealComm_DirectHealStart", HealInc)
+	libheal.RegisterCallback("", "HealModifierUpdate", HealInc)
 end
 
 local Name_Update = function(self, event, unit)
@@ -365,6 +374,8 @@ local Health_Update = function(self, event, bar, unit, current, max)
 	else
 		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
+
+	self.heal:SetPoint("BOTTOM", bar, "BOTTOM", current, 0)
 end
 
 local OnEnter = function(self)
@@ -406,17 +417,15 @@ local frame = function(settings, self, unit)
 	hpbg:SetTexture(texture)
 	hpbg:SetAlpha(0.2)
 
-	if libheal then
-		local heal = CreateFrame("StatusBar", nil, self)
-		heal:SetAllPoints(self)
-		heal:SetStatusBarTexture(texture)
-		heal:SetOrientation("VERTICAL")
-		heal:SetStatusBarColor(0, 1, 0)
-		heal:SetFrameLevel(3)
-		heal:Hide()
+	local heal = CreateFrame("StatusBar", nil, self)
+	heal:SetAllPoints(self)
+	heal:SetStatusBarTexture(texture)
+	heal:SetOrientation("VERTICAL")
+	heal:SetStatusBarColor(0, 1, 0)
+	heal:SetFrameLevel(3)
+	heal:Hide()
 
-		self.heal = heal
-	end
+	self.heal = heal
 
 	hp.bg = hpbg
 	self.Health = hp
@@ -489,7 +498,6 @@ oUF:RegisterStyle("Kanne-Grid", style)
 oUF:SetActiveStyle("Kanne-Grid")
 
 local raid = {}
-
 for i = 1, 8 do
 	local r = oUF:Spawn("header", "oUF_Raid" .. i)
 	r:SetPoint("TOP", UIParent, "TOP", 0, -500)
@@ -509,8 +517,6 @@ for i = 1, 8 do
 	r:Show()
 	raid[i] = r
 end
-
--- BG handling
 
 local SubGroups = function()
 	local t = {}
