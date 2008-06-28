@@ -47,6 +47,8 @@ local hightlight = [[Interface\AddOns\oUF_Kanne_Grid\media\mouseoverHighlight.tg
 
 local PLAYERCLASS = select(2, UnitClass("player"))
 
+local playername, playerrealm = UnitName("player"), GetRealmName()
+
 if UnitName("player") == "Kanne" then
 	PLAYERCLASS = "PALADIN"
 end
@@ -267,6 +269,7 @@ end
 local invRoster = setmetatable({}, {
 	__index = function(self, key)
 		local name, server = UnitName(key)
+		if name == playername then server = playerserver end
 		if server and server ~= "" then
 			name = name .. "-" .. server
 		end
@@ -274,9 +277,14 @@ local invRoster = setmetatable({}, {
 		return name
 	end
 })
+
 local Roster = setmetatable({},{
 	__index = function(self, key)
 		-- Dont want to do this :(
+		if key == playername then
+			self[key .. "-" .. realmname] = self[key]
+			return self[key]
+		end
 		for unit in pairs(oUF.units) do
 			local name, server = UnitName(unit)
 			if name == key and server and server ~= "" then
