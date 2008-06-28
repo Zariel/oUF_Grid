@@ -293,9 +293,9 @@ setmetatable(Roster, {
 			local name, server = UnitName(unit)
 			if name == key and server and server ~= "" then
 				name = name .. "-" .. server
-				rawset(self, key, name)
-				rawset(invRoster, name, key)
-				return name
+				rawset(self, name, unit)
+				rawset(invRoster, unit, name)
+				return unit
 			end
 		end
 		return
@@ -358,6 +358,7 @@ if libheal then
 				printf("No Frame: unit = %s name = %s", tostring(unit), tostring(name))
 				printf("Unitexists: %s", UnitExists(unit))
 				print("===========================")
+				return
 			end
 
 			local incHeal = libheal:UnitIncomingHealGet(name, GetTime() + 4) or 0
