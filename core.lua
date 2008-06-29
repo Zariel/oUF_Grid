@@ -340,7 +340,7 @@ local UpdateRoster = function()
 				if n then
 					Roster[n] = nil
 				end
-			invRoster[unit] = nil
+				invRoster[unit] = nil
 			end
 		end
 	end
@@ -361,8 +361,8 @@ if libheal then
 				return
 			end
 
-			local incHeal = libheal:UnitIncomingHealGet(name, GetTime() + 4) or 0
-			if incHeal > 0 then
+			local incHeal = libheal:UnitIncomingHealGet(name, GetTime() + 4)
+			if incHeal then
 				print("Heals inc: " .. incHeal)
 				local mod = libheal:UnitHealModifierGet(name)
 				local val = (mod * incHeal)
@@ -417,7 +417,7 @@ local Health_Update = function(self, event, bar, unit, current, max)
 		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
 
-	self.heal:SetPoint("BOTTOM", bar, "BOTTOM", current, 0)
+	self.heal:SetPoint("BOTTOM", bar, "BOTTOM", 0, height * current)
 end
 
 local OnEnter = function(self)
