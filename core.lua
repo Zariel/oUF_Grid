@@ -230,10 +230,12 @@ function f:UNIT_AURA(unit)
 	end
 
 	if current and bTexture then
+		frame.IconShown = true
 		frame.Icon:SetTexture(bTexture)
 		frame.Icon:ShowText()
 		frame.DebuffTexture = true
 	else
+		frame.IconShown = false
 		frame.DebuffTexture = false
 		frame.Icon:HideText()
 	end
@@ -273,9 +275,11 @@ setmetatable(invRoster, {
 		if server and server ~= "" then
 			name = name .. "-" .. server
 		end
-		rawset(Roster, name, key)
-		rawset(self, key, name)
-		return name
+		if name then
+			rawset(Roster, name, key)
+			rawset(self, key, name)
+			return name
+		end
 	end
 })
 
@@ -357,7 +361,7 @@ if libheal then
 
 			local incHeal = libheal:UnitIncomingHealGet(name, GetTime() + 4) or 0
 			if incHeal > 0 then
-				print("Heals inc: " .. incHeal)
+				printf("[%s] %s (%s) ---> %s (%s)", event, healerName, incHeal, name, unit)
 				local mod = libheal:UnitHealModifierGet(name)
 				local val = (mod * incHeal)
 				frame.heal:SetValue(val)
