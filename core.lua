@@ -284,11 +284,17 @@ setmetatable(invRoster, {
 
 setmetatable(Roster, {
 	__index = function(self, key)
-		-- Dont want to do this :(
 		if key == playername then
-			self[key .. "-" .. realmname] = self[key]
-			return self[key]
+			local unit
+			if UnitInRaid("player") then
+				unit = UintInRaid("player") + 1
+			else
+				unit = "player"
+			end
+			self[key .. "-" .. playerrealm] = unit
+			return unit
 		end
+		-- Dont want to do this :(
 		for unit in pairs(oUF.units) do
 			local name, server = UnitName(unit)
 			if name == key and server and server ~= "" then
@@ -333,8 +339,10 @@ local UpdateRoster = function()
 			e = UnitExists(unit)
 			if e then
 				local name, server = UnitName(unit)
-				Roster[name] = unit
-				invRoster[unit] = name
+				if not Roster[name] then
+					Roster[name] = unit
+					invRoster[unit] = name
+				end
 			else
 				local n = invRoster[unit]
 				if n then
@@ -354,20 +362,23 @@ if libheal then
 			if not unit then return end
 			local frame = oUF.units[unit]
 
-			if not frame then
+			if not frame or not frame.heal then
 				printf("No Frame: unit = %s name = %s", tostring(unit), tostring(name))
 				printf("Unitexists: %s", UnitExists(unit))
 				print("===========================")
 				return
 			end
 
-			local incHeal = libheal:UnitIncomingHealGet(name, GetTime() + 4)
+			local incHeal = select(2, libheal:UnitIncomingHealGet(name, GetTime()))
 			if incHeal then
-				print("Heals inc: " .. incHeal)
 				local mod = libheal:UnitHealModifierGet(name)
 				local val = (mod * incHeal)
-				frame.heal:SetValue(val)
+				local incPer = val / UnitHealthMax(unit)
+				local per = UnitHealth(unit) / UnitHealthMax(unit)
+				frame.heal:SetHeight(incPer * height)
+				frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, height * per)
 				frame.heal:Show()
+				printf("%s (%s) ---> %s (%s)", healerName, val, name, unit)
 			else
 				frame.heal:Hide()
 			end
@@ -386,7 +397,7 @@ local Name_Update = function(self, event, unit)
 	self.name = string.sub(n, 1, 3)
 --	self.Health:SetStatusBarColor(GetClassColor(unit))
 	self.Health.bg:SetVertexColor(GetClassColor(unit))
-
+--[[
 	if s and s ~= "" then
 		n = n .. "-" ..s
 	end
@@ -394,7 +405,7 @@ local Name_Update = function(self, event, unit)
 	if not n or not s then return end
 
 	Roster[unit] = n
-	invRoster[n] = unit
+	invRoster[n] = unit]]
 end
 
 local Health_Update = function(self, event, bar, unit, current, max)
@@ -417,7 +428,8 @@ local Health_Update = function(self, event, bar, unit, current, max)
 		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
 
-	self.heal:SetPoint("BOTTOM", bar, "BOTTOM", 0, height * current)
+--	self.heal:ClearAllPoints()
+--	self.heal:SetPoint("BOTTOM", bar, "BOTTOM", 0, height * current)
 end
 
 local OnEnter = function(self)
@@ -461,12 +473,12 @@ local frame = function(settings, self, unit)
 	hpbg:SetTexture(texture)
 	hpbg:SetAlpha(1)
 
-	local heal = CreateFrame("StatusBar", nil, self)
-	heal:SetAllPoints(self)
-	heal:SetStatusBarTexture(texture)
-	heal:SetOrientation("VERTICAL")
-	heal:SetStatusBarColor(0, 1, 0)
-	heal:SetFrameLevel(3)
+	local heal = hp:CreateTexture(nil, "OVERLAY")
+	heal:SetHeight(height)
+	heal:SetWidth(width)
+	heal:SetPoint("BOTTOM")
+	heal:SetTexture(texture)
+	heal:SetVertexColor(0, 1, 0)
 	heal:Hide()
 
 	self.heal = heal
