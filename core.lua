@@ -430,8 +430,8 @@ local Health_Update = function(self, event, bar, unit, current, max)
 		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
 
---	self.heal:ClearAllPoints()
---	self.heal:SetPoint("BOTTOM", bar, "BOTTOM", 0, height * current)
+	self.heal:ClearAllPoints()
+	self.heal:SetPoint("BOTTOM", self, "BOTTOM", 0, height * per)
 end
 
 local OnEnter = function(self)
