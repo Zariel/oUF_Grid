@@ -150,26 +150,25 @@ end
 
 local ColorGradient = function(perc, r1, g1, b1, r2, g2, b2, r3, g3, b3)
 	if perc >= 1 then
-		return {r3, g3, b3}
+		return { r3, g3, b3 }
 	elseif perc <= 0 then
-		return {r1, g1, b1}
+		return { r1, g1, b1 }
 	end
 
-	local segment, relperc = math.modf(perc*(3-1))
+	local segment, relperc = math.modf(perc*(2))
 	local offset = (segment*3)+1
 
 	if(offset == 1) then
-		return {r1 + (r2-r1)*relperc, g1 + (g2-g1)*relperc, b1 + (b2-b1)*relperc}
+		return { r1 + (r2-r1)*relperc, g1 + (g2-g1)*relperc, b1 + (b2-b1)*relperc }
 	end
 
-	return {r2 + (r3-r2)*relperc, g2 + (g3-g2)*relperc, b2 + (b3-b2)*relperc}
+	return { r2 + (r3-r2)*relperc, g2 + (g3-g2)*relperc, b2 + (b3-b2)*relperc }
 end
 
 local f = CreateFrame("Frame")
 f:SetScript("OnEvent", function(self, evnet, ...)
 	return self[event](self, ...)
 end)
-
 
 local name, rank, buffTexture, count, duration, timeLeft, dtype
 function f:UNIT_AURA(unit)
@@ -365,9 +364,9 @@ if libheal then
 			local frame = oUF.units[unit]
 
 			if not frame or not frame.heal then
+				print("===========================")
 				printf("No Frame: unit = %s name = %s", tostring(unit), tostring(name))
 				printf("Unitexists: %s", UnitExists(unit))
-				print("===========================")
 				return
 			end
 
