@@ -608,14 +608,13 @@ function f:RAID_ROSTER_UPDATE()
 
 	local roster = SubGroups()
 
+	local h = math.max(unpack(roster))
+	local w = 0
 	for k, v in ipairs(roster) do
-		if type(v) == "nil" then
-			print(string.format("Nil value at index %d", k))
+		if v > 0 then
+			w = w + 1
 		end
 	end
-
-	local h = math.max(unpack(roster))
-	local w = #roster
 
 	bg:SetPoint("RIGHT", raid[w], "RIGHT", 8, 0)
 
