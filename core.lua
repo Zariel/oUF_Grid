@@ -627,6 +627,8 @@ function f:RAID_ROSTER_UPDATE()
 			end
 		end
 		bg:SetPoint("RIGHT", raid[last], "RIGHT", 8, 0)
+	else
+		bg:SetPoint("LEFT", raid[1], "LEFT", -8 , 0)
 	end
 
 	if libheal then
