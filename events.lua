@@ -194,20 +194,20 @@ if libheal then
 				printf("Unitexists: %s", UnitExists(unit))
 				return
 			end
-		end
 
-		local incHeal = select(2, libheal:UnitIncomingHealGet(name, GetTime()))
-		if incHeal then
-			local mod = libheal:UnitHealModifierGet(name)
-			local val = (mod * incHeal)
-			local incPer = val / UnitHealthMax(unit)
-			local per = UnitHealth(unit) / UnitHealthMax(unit)
-			frame.heal:SetHeight(incPer * height)
-			frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, height * per)
-			frame.heal:Show()
-			printf("%s (%s) ---> %s (%s)", healerName, val, name, unit)
-		else
-			frame.heal:Hide()
+			local incHeal = select(2, libheal:UnitIncomingHealGet(name, GetTime()))
+			if incHeal then
+				local mod = libheal:UnitHealModifierGet(name)
+				local val = (mod * incHeal)
+				local incPer = val / UnitHealthMax(unit)
+				local per = UnitHealth(unit) / UnitHealthMax(unit)
+				frame.heal:SetHeight(incPer * height)
+				frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, height * per)
+				frame.heal:Show()
+				printf("%s (%s) ---> %s (%s)", healerName, val, name, unit)
+			else
+				frame.heal:Hide()
+			end
 		end
 	end
 
@@ -215,7 +215,6 @@ if libheal then
 	libheal.RegisterCallback("", "HealComm_DirectHealStart", HealInc)
 	libheal.RegisterCallback("", "HealModifierUpdate", HealInc)
 end
-
 
 local name, rank, buffTexture, count, duration, timeLeft, dtype
 function f:UNIT_AURA(unit)
