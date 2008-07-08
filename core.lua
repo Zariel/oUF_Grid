@@ -241,8 +241,8 @@ function f:UNIT_AURA(unit)
 end
 
 function f:PLAYER_TARGET_CHANGED()
-	local id = UnitInRaid("target") and UnitInRaid("target") + 1 or UnitInParty("target") and UnitInParty("target")
-	local frame = id and UnitInRaid("target") and oUF.units["raid" .. id] or id and UnitInParty("target") and oUF.units["party" .. id]
+	local id = UnitInRaid("target") and UnitInRaid("target") + 1 
+	local frame = id and UnitInRaid("target") and oUF.units["raid" .. id]
 	if not frame then
 		if coloredFrame then
 			if not oUF.units[coloredFrame].Dispell then
@@ -262,7 +262,7 @@ function f:PLAYER_TARGET_CHANGED()
 		frame.border:Show()
 	end
 
-	coloredFrame = UnitInRaid("target") and "raid" .. id or UnitInParty("target") and "party" .. id
+	coloredFrame = UnitInRaid("target") and "raid" .. id
 end
 
 local Roster, invRoster = {}, {}
