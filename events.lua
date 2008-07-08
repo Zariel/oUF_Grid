@@ -100,7 +100,7 @@ if libheal then
 	setmetatable(invRoster, {
 		__index = function(self, key)
 			local name, server = UnitName(key)
-			if name == playername then server = playerserver end
+			if name == playername then server = playerrealm end
 			if server and server ~= "" then
 				name = name .. "-" .. server
 			end
