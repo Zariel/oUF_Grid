@@ -19,6 +19,8 @@ local playername, playerrealm = UnitName("player"), GetRealmName()
 
 local coloredFrame      -- Selected Raid Member
 
+local UpdateRoster
+
 local debuffs = {
 	["Viper Sting"] = 12,
 
@@ -133,7 +135,7 @@ if libheal then
 		end
 	})
 
-	local UpdateRoster = function()
+	UpdateRoster = function()
 		local unit
 		local e
 		if GetNumRaidMembers() > 0 then
@@ -326,7 +328,7 @@ end
 
 -- BG
 local bg = CreateFrame("Frame")
-bg:SetPoint("TOP", _G["oUF_raid" .. 1], "TOP", 0, 8)
+bg:SetPoint("TOP", _G["oUF_Raid1"], "TOP", 0, 8)
 bg:SetBackdrop({
 	bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = true, tileSize = 16,
 	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
