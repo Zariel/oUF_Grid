@@ -396,17 +396,7 @@ local Name_Update = function(self, event, unit)
 
 	local n, s = UnitName(unit)
 	self.name = string.sub(n, 1, 3)
---	self.Health:SetStatusBarColor(GetClassColor(unit))
 	self.Health.bg:SetVertexColor(GetClassColor(unit))
---[[
-	if s and s ~= "" then
-		n = n .. "-" ..s
-	end
-
-	if not n or not s then return end
-
-	Roster[unit] = n
-	invRoster[n] = unit]]
 end
 
 local Health_Update = function(self, event, bar, unit, current, max)
