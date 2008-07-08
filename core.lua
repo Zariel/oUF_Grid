@@ -588,7 +588,8 @@ do
 end
 -- BG
 local bg = CreateFrame("Frame")
-bg:SetPoint("TOPLEFT", raid[1], "TOPLEFT", - 8, 8)
+bg:SetPoint("TOP", raid[1], "TOP", 0, 8)
+bg:SetPoint("LEFT", raid[1], "LEFT", - 8, 0)
 bg:SetBackdrop({
 	bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = true, tileSize = 16,
 	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
