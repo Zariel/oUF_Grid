@@ -603,24 +603,31 @@ function f:RAID_ROSTER_UPDATE()
 	local w, h = 0, 1
 	for k, v in ipairs(roster) do
 		if v > 0 then
-			w = w + 1
+			w = k
 		end
 		if v > roster[h] then
 			h = k
 		end
 	end
 
+	bg:SetPoint("RIGHT", raid[w], "RIGHT", 8, 0)
+	bg:SetPoint("BOTTOM", raid[h], "BOTTOM", 0, -8)
+
 	if roster[1] < 1 then
+		local last
 		for k, v in ipairs(roster) do
 			if v > 0 then
 				bg:SetPoint("LEFT", raid[k], "LEFT", -8 , 0)
 				break
 			end
 		end
+		for k, v in ipairs(roster) do
+			if v > 0 then
+				last = k
+			end
+		end
+		bg:SetPoint("RIGHT", raid[last], "RIGHT", 8, 0)
 	end
-
-	bg:SetPoint("RIGHT", raid[w], "RIGHT", 8, 0)
-	bg:SetPoint("BOTTOM", raid[h], "BOTTOM", 0, -8)
 
 	if libheal then
 		UpdateRoster()
