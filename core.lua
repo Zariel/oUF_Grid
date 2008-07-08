@@ -599,7 +599,6 @@ function f:RAID_ROSTER_UPDATE()
 
 	local roster = SubGroups()
 
-	--local h = math.max(unpack(roster))
 	if h == 0 then return bg:Hide() end
 	local w, h = 0, 1
 	for k, v in ipairs(roster) do
@@ -621,9 +620,7 @@ function f:RAID_ROSTER_UPDATE()
 	end
 
 	bg:SetPoint("RIGHT", raid[w], "RIGHT", 8, 0)
-
 	bg:SetPoint("BOTTOM", raid[h], "BOTTOM", 0, -8)
-	--bg:SetHeight(29 * h)
 
 	if libheal then
 		UpdateRoster()
