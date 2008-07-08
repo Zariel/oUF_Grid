@@ -574,13 +574,17 @@ for i = 1, 8 do
 	raid[i] = r
 end
 
-local SubGroups = function()
+local SubGroups
+do
 	local t = {}
-	for i = 1, GetNumRaidMembers() do
-		local s = select(3, GetRaidRosterInfo(i))
-		t[s] = (t[s] or 0) + 1
+	SubGroups = function()
+		for i = 1, 8 do t[i] = 0 end
+		for i = 1, GetNumRaidMembers() do
+			local s = select(3, GetRaidRosterInfo(i))
+			t[s] = t[s] + 1
+		end
+		return t
 	end
-	return t
 end
 -- BG
 local bg = CreateFrame("Frame")
