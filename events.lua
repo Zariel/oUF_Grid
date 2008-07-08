@@ -118,7 +118,7 @@ if libheal then
 			if key == playername then
 				local unit
 				if UnitInRaid("player") then
-					unit = UintInRaid("player") + 1
+					unit = UnitInRaid("player") + 1
 				else
 					unit = "player"
 				end
