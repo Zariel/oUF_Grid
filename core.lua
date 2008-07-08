@@ -617,6 +617,15 @@ function f:RAID_ROSTER_UPDATE()
 		end
 	end
 
+	if roster[1] < 1 then
+		for k, v in ipairs(roster) do
+			if v > 0 then
+				bg:SetPoint("LEFT", raid[k], "LEFT", -8 , 0)
+				break
+			end
+		end
+	end
+
 	bg:SetPoint("RIGHT", raid[w], "RIGHT", 8, 0)
 
 	bg:SetHeight(29 * h)
