@@ -1,3 +1,5 @@
+local print = function(str) return ChatFrame3:AddMessage(tostring(str)) end
+local printf = function(...) return ChatFrame3:AddMessage(string.format(...)) end
 local _G = getfenv(0)
 local oUF = _G.oUF
 local libheal = LibStub("LibHealComm-3.0", true)
