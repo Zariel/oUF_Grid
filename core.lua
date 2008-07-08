@@ -599,19 +599,6 @@ function f:RAID_ROSTER_UPDATE()
 
 	local roster = SubGroups()
 
-	if h == 0 then return bg:Hide() end
-	local w, h = 0, 1
-	for k, v in ipairs(roster) do
-		if v > 0 then
-			w = k
-		end
-		if v > roster[h] then
-			h = k
-		end
-	end
-
-	bg:SetPoint("BOTTOM", raid[h], "BOTTOM", 0, -8)
-
 	if roster[1] < 1 then
 		local last, first
 		for k, v in ipairs(roster) do
@@ -625,8 +612,18 @@ function f:RAID_ROSTER_UPDATE()
 		bg:SetPoint("LEFT", raid[first], "LEFT", -8 , 0)
 		bg:SetPoint("RIGHT", raid[last], "RIGHT", 8, 0)
 	else
+		local w, h = 0, 1
+		for k, v in ipairs(roster) do
+			if v > 0 then
+				w = k
+			end
+			if v > roster[h] then
+				h = k
+			end
+		end
 		bg:SetPoint("LEFT", raid[1], "LEFT", -8 , 0)
 		bg:SetPoint("RIGHT", raid[w], "RIGHT", 8, 0)
+		bg:SetPoint("BOTTOM", raid[h], "BOTTOM", 0, -8)
 	end
 
 	if libheal then
