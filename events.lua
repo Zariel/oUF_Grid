@@ -21,6 +21,8 @@ local coloredFrame      -- Selected Raid Member
 
 local UpdateRoster
 
+local width, height = 32, 32
+
 local debuffs = {
 	["Viper Sting"] = 12,
 
