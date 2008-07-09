@@ -108,7 +108,7 @@ local Health_Update = function(self, event, bar, unit, current, max)
 	local col = ColorGradient(per, 1, 0, 0, 1, 1, 0, 1, 1, 1)
 	self.Name:SetTextColor(unpack(col))
 
-	if def < 900 or UnitIsDeadOrGhost(unit) then
+	if per > 0.9 or UnitIsDeadOrGhost(unit) then
 		self.Name:SetText(self.name)
 	else
 		self.Name:SetFormattedText("-%0.1f",math.floor(def/100)/10)
