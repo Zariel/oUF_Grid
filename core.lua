@@ -96,7 +96,7 @@ local Name_Update = function(self, event, unit)
 	if self.unit ~= unit then return end
 
 	local n, s = UnitName(unit)
-	self.name = string.sub(n, 1, 3)
+	self.name = string.utf8sub(n, 1, 3)
 	self.Health.bg:SetVertexColor(GetClassColor(unit))
 end
 
