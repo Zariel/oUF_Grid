@@ -118,7 +118,7 @@ if libheal then
 			if key == playername then
 				local unit
 				if UnitInRaid("player") then
-					unit = UnitInRaid("player") + 1
+					unit = "raid" .. UnitInRaid("player") + 1
 				else
 					unit = "player"
 				end
@@ -151,7 +151,6 @@ if libheal then
 					if server and server ~= "" then
 						name = name .. "-" .. server
 					end
-
 					if name then
 						Roster[name] = unit
 						invRoster[unit] = name
