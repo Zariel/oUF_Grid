@@ -1,4 +1,12 @@
-local print = function(str) return ChatFrame3:AddMessage(tostring(str)) end
+local print = function(...)
+	local str = ""
+	for i = 1, select("#", ...) do
+		str = str .. " " .. tostring(select(i, ...))
+	end
+
+	return ChatFrame3:AddMessage(str)
+end
+
 local printf = function(...) return ChatFrame3:AddMessage(string.format(...)) end
 local _G = getfenv(0)
 local oUF = _G.oUF
@@ -122,7 +130,9 @@ if libheal then
 				else
 					unit = "player"
 				end
-				self[key .. "-" .. playerrealm] = unit
+				local set = key .. "-" .. playerrealm
+				rawset(self, set, unit)
+				rawset(invRoster, unit, set)
 				return unit
 			end
 			-- Dont want to do this :(
@@ -198,7 +208,9 @@ if libheal then
 				return
 			end
 
-			local incHeal = select(2, libheal:UnitIncomingHealGet(name, GetTime()))
+			local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime()))
+			local a, b = libheal:UnitIncomingHealGet(unit, GetTime())
+			print(name, unit, a, b)
 			if incHeal then
 				local mod = libheal:UnitHealModifierGet(name)
 				local val = (mod * incHeal)
