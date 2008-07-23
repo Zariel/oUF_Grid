@@ -100,11 +100,15 @@ local Name_Update = function(self, event, unit)
 	self.Health.bg:SetVertexColor(GetClassColor(unit))
 end
 
+local round = function(x, y)
+	return math.floor((x * 10 ^ y)+ 0.5) / 10 ^ y
+end
+
 local Health_Update = function(self, event, bar, unit, current, max)
 	local def = max - current
 	bar:SetValue(current)
 
-	local per = math.floor(current/max*1000)/1000
+	local per = round(current/max, 100)
 	local col = ColorGradient(per, 1, 0, 0, 1, 1, 0, 1, 1, 1)
 	self.Name:SetTextColor(unpack(col))
 
@@ -114,8 +118,9 @@ local Health_Update = function(self, event, bar, unit, current, max)
 		self.Name:SetFormattedText("-%0.1f",math.floor(def/100)/10)
 	end
 
-	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
+	if UnitIsDeadOrGhost(unit) then
 		bar.bg:SetVertexColor(0.3, 0.3, 0.3)
+		print("Dead " .. unit)
 	else
 		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
