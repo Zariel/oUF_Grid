@@ -97,7 +97,11 @@ local Name_Update = function(self, event, unit)
 
 	local n, s = UnitName(unit)
 	self.name = string.utf8sub(n, 1, 3)
-	self.Health.bg:SetVertexColor(GetClassColor(unit))
+	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
+		self.Health.bg:SetVertexColor(0.3, 0.3, 0.3)
+	else
+		self.Health.bg:SetVertexColor(GetClassColor(unit))
+	end
 end
 
 local round = function(x, y)
@@ -118,9 +122,8 @@ local Health_Update = function(self, event, bar, unit, current, max)
 		self.Name:SetFormattedText("-%0.1f",math.floor(def/100)/10)
 	end
 
-	if UnitIsDeadOrGhost(unit) then
+	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
 		bar.bg:SetVertexColor(0.3, 0.3, 0.3)
-		print("Dead " .. unit)
 	else
 		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
