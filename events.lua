@@ -226,15 +226,29 @@ if libheal then
 
 		local frame = oUF.units[unit]
 
+		if not frame.heal then
+			local heal = frame.Health:CreateTexture(nil, "OVERLAY")
+			heal:SetHeight(height)
+			heal:SetWidth(width)
+			heal:SetPoint("BOTTOM")
+			heal:SetTexture([[Interface\AddOns\oUF_Kanne_Grid\media\gradient32x32.tga]])
+			heal:SetVertexColor(0, 1, 0)
+			heal:Hide()
+			frame.heal = heal
+		end
+
 		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime())) or ownHeals[name]
 		if incHeal and incHeal > 0 then
-			print(incHeal, ownHeals[name])
 			incHeal = incHeal + (ownHeals[name] or 0)
 			local mod = libheal:UnitHealModifierGet(name)
 			local val = (mod * incHeal)
 			local incPer = val / UnitHealthMax(unit)
 			local per = UnitHealth(unit) / UnitHealthMax(unit)
 			frame.heal:SetHeight(incPer * height)
+			if (incPer * height) + (height * per) >= height then
+				local over = (incPer * height) + (height * per) - height
+				frame.heal:SetHeight((incPer * height) - over)
+			end
 			frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, height * per)
 			frame.heal:Show()
 		else
