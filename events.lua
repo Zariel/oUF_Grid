@@ -226,8 +226,10 @@ if libheal then
 
 		local frame = oUF.units[unit]
 
-		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime())) + (ownHeals[name] or 0)
-		if incHeal then
+		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime())) or ownHeals[name]
+		if incHeal and incHeal > 0 then
+			print(incHeal, ownHeals[name])
+			incHeal = incHeal + (ownHeals[name] or 0)
 			local mod = libheal:UnitHealModifierGet(name)
 			local val = (mod * incHeal)
 			local incPer = val / UnitHealthMax(unit)
@@ -236,7 +238,7 @@ if libheal then
 			frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, height * per)
 			frame.heal:Show()
 		else
-			frae.heal:Hide()
+			frame.heal:Hide()
 		end
 	end
 
