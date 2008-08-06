@@ -230,7 +230,7 @@ if libheal then
 			local heal = frame.Health:CreateTexture(nil, "OVERLAY")
 			heal:SetHeight(height)
 			heal:SetWidth(width)
-			heal:SetPoint("BOTTOM")
+			heal:SetPoint("BOTTOM", frame.Health)
 			heal:SetTexture([[Interface\AddOns\oUF_Kanne_Grid\media\gradient32x32.tga]])
 			heal:SetVertexColor(0, 1, 0)
 			heal:Hide()
