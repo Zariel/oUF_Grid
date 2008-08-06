@@ -103,6 +103,7 @@ local dispellPiority = {
 -- Lib Heal Support
 
 if libheal then
+	local ownHeals = {}
 	local Roster, invRoster = {}, {}
 
 	setmetatable(invRoster, {
@@ -194,41 +195,55 @@ if libheal then
 		end
 	end
 
-	local HealInc = function(event, healerName, healSize, endTime, ...)
+	local heals = {}
+
+	function heals:HealComm_DirectHealStop(event, healerName, healSize, succeeded, ...)
+		self:HealComm_DirectHealStart(event, healerName, 0, endTime, ...)
+	end
+
+	function heals:HealModifierUpdate(event, unit, targetName, healModifier)
+		self:UpdateHeals(targetName)
+	end
+
+	function heals:HealComm_DirectHealDelayed(event, healerName, healSize, endTime, ...)
+		self:HealComm_DirectHealStart(event, healerName, healSize, endTime, ...)
+	end
+
+	function heals:HealComm_DirectHealStart(event, healerName, healSize, endTime, ...)
+		local isOwn = healerName == playername
 		for i = 1, select("#", ...) do
-			local name = tostring(select(i, ...))
-			local unit = Roster[name]
-			if not unit then return end
-			local frame = oUF.units[unit]
-
-			if not frame or not frame.heal then
-				print("===========================")
-				printf("No Frame: unit = %s name = %s", tostring(unit), tostring(name))
-				printf("Unitexists: %s", UnitExists(unit))
-				return
+			local name = select(i, ...)
+			if isOwn then
+				ownHeals[name] = healSize
 			end
-
-			local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime()))
-			local a, b = libheal:UnitIncomingHealGet(unit, GetTime())
-			print(name, unit, a, b)
-			if incHeal then
-				local mod = libheal:UnitHealModifierGet(name)
-				local val = (mod * incHeal)
-				local incPer = val / UnitHealthMax(unit)
-				local per = UnitHealth(unit) / UnitHealthMax(unit)
-				frame.heal:SetHeight(incPer * height)
-				frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, height * per)
-				frame.heal:Show()
-				printf("%s (%s) ---> %s (%s)", healerName, val, name, unit)
-			else
-				frame.heal:Hide()
-			end
+			self:UpdateHeals(name)
 		end
 	end
 
-	libheal.RegisterCallback("", "HealComm_DirectHealStop", HealInc)
-	libheal.RegisterCallback("", "HealComm_DirectHealStart", HealInc)
-	libheal.RegisterCallback("", "HealModifierUpdate", HealInc)
+	function heals:UpdateHeals(name)
+		local unit = Roster[name]
+		if not oUF.units[unit] then return end
+
+		local frame = oUF.units[unit]
+
+		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime())) + (ownHeals[name] or 0)
+		if incHeal then
+			local mod = libheal:UnitHealModifierGet(name)
+			local val = (mod * incHeal)
+			local incPer = val / UnitHealthMax(unit)
+			local per = UnitHealth(unit) / UnitHealthMax(unit)
+			frame.heal:SetHeight(incPer * height)
+			frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, height * per)
+			frame.heal:Show()
+		else
+			frae.heal:Hide()
+		end
+	end
+
+	libheal.RegisterCallback(heals, "HealComm_DirectHealStop")
+	libheal.RegisterCallback(heals, "HealComm_DirectHealDelayed")
+	libheal.RegisterCallback(heals, "HealComm_DirectHealStart")
+	libheal.RegisterCallback(heals, "HealModifierUpdate")
 end
 
 local name, rank, buffTexture, count, duration, timeLeft, dtype
