@@ -231,7 +231,7 @@ if libheal then
 			heal:SetHeight(height)
 			heal:SetWidth(width)
 			heal:SetPoint("BOTTOM", frame.Health)
-			heal:SetTexture([[Interface\AddOns\oUF_Kanne_Grid\media\gradient32x32.tga]])
+			heal:SetTexture([[Interface\AddOns\oUF_Grid\media\gradient32x32.tga]])
 			heal:SetVertexColor(0, 1, 0)
 			heal:Hide()
 			frame.heal = heal

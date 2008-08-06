@@ -39,9 +39,9 @@ local UnitInRaid = UnitInRaid
 
 local width, height = 32, 32
 
-local supernova = [[Interface\AddOns\oUF_Kanne_Grid\media\nokiafc22.ttf]]
-local texture = [[Interface\AddOns\oUF_Kanne_Grid\media\gradient32x32.tga]]
-local hightlight = [[Interface\AddOns\oUF_Kanne_Grid\media\mouseoverHighlight.tga]]
+local supernova = [[Interface\AddOns\oUF_Grid\media\nokiafc22.ttf]]
+local texture = [[Interface\AddOns\oUF_Grid\media\gradient32x32.tga]]
+local hightlight = [[Interface\AddOns\oUF_Grid\media\mouseoverHighlight.tga]]
 
 
 if UnitName("player") == "Kanne" then
