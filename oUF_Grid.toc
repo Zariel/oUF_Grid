@@ -1,0 +1,13 @@
+## Interface: 20400
+## Dependencies: oUF
+## Author: Zariel
+## Title: oUF_Grid
+## Version: 2.4.3-11
+## OptionalDeps: LibHealComm-3.0, UTF8
+
+lib\UTF8\utf8data.lua
+lib\UTF8\utf8.lua
+lib\LibHealComm-3.0\lib.xml
+
+core.lua
+events.lua
