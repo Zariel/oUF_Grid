@@ -108,7 +108,7 @@ local round = function(x, y)
 	return math.floor((x * 10 ^ y)+ 0.5) / 10 ^ y
 end
 
-local Health_Update = function(self, event, bar, unit, current, max)
+local Health_Update = function(self, event, unit, bar, current, max)
 	local def = max - current
 	bar:SetValue(current)
 
