@@ -30,6 +30,10 @@ local printf = function(...) return ChatFrame3:AddMessage(string.format(...)) en
 local _G = getfenv(0)
 local oUF = _G.oUF
 
+if oUF.version ~= 1.1 then
+	return error("oUF_Grid Requires oUF Version >= 1.1, higher versions may break it or may not, remove this line if you care or can fix it. kisses Zariel, also dont PM its broken.")
+end
+
 local UnitName = UnitName
 local UnitClass = UnitClass
 local select = select
@@ -42,11 +46,6 @@ local width, height = 32, 32
 local supernova = [[Interface\AddOns\oUF_Grid\media\nokiafc22.ttf]]
 local texture = [[Interface\AddOns\oUF_Grid\media\gradient32x32.tga]]
 local hightlight = [[Interface\AddOns\oUF_Grid\media\mouseoverHighlight.tga]]
-
-
-if UnitName("player") == "Kanne" then
-	PLAYERCLASS = "PALADIN"
-end
 
 local colors = {
 	class ={
