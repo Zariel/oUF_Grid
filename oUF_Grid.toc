@@ -2,7 +2,7 @@
 ## Dependencies: oUF
 ## Author: Zariel
 ## Title: oUF_Grid
-## Version: 2.4.3-13
+## Version: 2.4.3-14
 ## OptionalDeps: LibHealComm-3.0, UTF8
 
 lib\UTF8\utf8data.lua
