@@ -30,7 +30,7 @@ local printf = function(...) return ChatFrame3:AddMessage(string.format(...)) en
 local _G = getfenv(0)
 local oUF = _G.oUF
 
-if oUF.version ~= 1.1 then
+if tonumber(oUF.version) ~= 1.1 then
 	return error("oUF_Grid Requires oUF Version >= 1.1, higher versions may break it or may not, remove this line if you care or can fix it. kisses Zariel, also dont PM its broken.")
 end
 

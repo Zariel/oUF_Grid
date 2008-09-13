@@ -1,3 +1,7 @@
+if tonumber(oUF.version) ~= 1.1 then
+	return
+end
+
 local print = function(...)
 	local str = ""
 	for i = 1, select("#", ...) do
