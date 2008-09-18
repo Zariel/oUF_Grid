@@ -1,7 +1,3 @@
-if oUF.version < "1.1" then
-	return
-end
-
 local print = function(...)
 	local str = ""
 	for i = 1, select("#", ...) do
@@ -13,7 +9,19 @@ end
 
 local printf = function(...) return ChatFrame3:AddMessage(string.format(...)) end
 local _G = getfenv(0)
-local oUF = _G.oUF
+local oUF
+
+do
+	if _G.oufgrid then
+		oUF = _G.oufgrid
+		_G.oufgrid = nil
+	elseif _G.oUF then
+		oUF = _G.oUF
+	else
+		return
+	end
+end
+
 local libheal = LibStub("LibHealComm-3.0", true)
 
 local UnitName = UnitName
