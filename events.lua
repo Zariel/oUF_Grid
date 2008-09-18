@@ -1,4 +1,4 @@
-if tonumber(oUF.version) ~= 1.1 then
+if oUF.version < "1.1" then
 	return
 end
 

@@ -28,10 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 local print = function(str) return ChatFrame3:AddMessage(tostring(str)) end
 local printf = function(...) return ChatFrame3:AddMessage(string.format(...)) end
 local _G = getfenv(0)
-local oUF = _G.oUF
+local oUF = _G.oufgrid
 
-if tonumber(oUF.version) ~= 1.1 then
-	return error("oUF_Grid Requires oUF Version >= 1.1, higher versions may break it or may not, remove this line if you care or can fix it. kisses Zariel, also dont PM its broken.")
+if oUF.version ~= "1.1" then
+	ChatFrame1:AddMessage("oUF Grid: oUF_Grid Requires oUF Version >= 1.1, higher versions may break it or may not, remove this line if you care or can fix it. kisses Zariel, also dont PM its broken.")
 end
 
 local UnitName = UnitName
@@ -62,13 +62,9 @@ local colors = {
 }
 setmetatable(colors.class, {
 	__index = function(self, key)
-		return self.WARRIOR
+		return { 0.78, 0.61, 0.43 }
 	end
 })
-
--- Debuff priority, with the same number = same mechanic, i gave wounder >
--- mortal beacuse wound is dispellable etc.
-
 
 local GetClassColor = function(unit)
 	return unpack(colors.class[select(2, UnitClass(unit))])
@@ -96,6 +92,7 @@ local Name_Update = function(self, event, unit)
 
 	local n, s = UnitName(unit)
 	self.name = string.utf8sub(n, 1, 3)
+
 	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
 		self.Health.bg:SetVertexColor(0.3, 0.3, 0.3)
 	else
