@@ -10,6 +10,7 @@
 	 - colorClassNPC (Colors non-player units based on class)
 	 - colorReaction
 	 - colorSmooth - will use smoothGradient instead of the internal gradient if set.
+	 - colorHealth
 
 	Background:
 	 - multiplier - number used to manipulate the power background. (default: 1)
@@ -68,9 +69,11 @@ function oUF:UNIT_MAXHEALTH(event, unit)
 			local _, class = UnitClass(unit)
 			t = self.colors.class[class]
 		elseif(bar.colorReaction) then
-			t = self.colors.reaction[UnitReaction(unit, "player")]
+			r, g, b = UnitSelectionColor(unit)
 		elseif(bar.colorSmooth and max ~= 0) then
 			r, g, b = self.ColorGradient(min / max, unpack(bar.smoothGradient or self.colors.smooth))
+		elseif(bar.colorHealth) then
+			t = self.colors.health
 		end
 
 		if(t) then
