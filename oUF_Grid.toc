@@ -1,7 +1,7 @@
 ## Interface: 30000
 ## Author: Zariel
 ## Title: oUF_Grid
-## Version: 3.0.3-16
+## Version: 3.0.3-17
 ## OptionalDeps: oUF, LibHealComm-3.0, UTF8
 ## X-oUF: oufgrid
 
