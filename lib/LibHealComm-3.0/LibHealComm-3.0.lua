@@ -1,6 +1,7 @@
-local MAJOR_VERSION = "LibHealComm-3.0";
-local MINOR_VERSION = tonumber(("$Revision: 72222 $"):match("%d+")); 
- 
+﻿local MAJOR_VERSION = "LibHealComm-3.0";
+local MINOR_VERSION = 90000 + tonumber(("$Revision: 5 $"):match("%d+")); 
+local WoTLK = select(4,GetBuildInfo()) >= 30000
+
 local lib = LibStub:NewLibrary(MAJOR_VERSION, MINOR_VERSION);
 if not lib then return end
 
@@ -175,7 +176,7 @@ local function getBaseHealSize(name)
             lib.Tooltip:SetSpell(i, BOOKTYPE_SPELL);
     
             -- Determine healing
-            local HealMin, HealMax = select(3, string.find(lib.TooltipTextLeft4:GetText() or lib.TooltipTextLeft3:GetText() or "", "(%d+) ?[\195\160tobisa到~]+ ?(%d+)"));
+            local HealMin, HealMax = select(3, string.find(lib.TooltipTextLeft4:GetText() or lib.TooltipTextLeft3:GetText() or "", "(%d+) ?[\195\160tobisa到~\-]+ ?(%d+)"));
             HealMin, HealMax = tonumber(HealMin) or 0, tonumber(HealMax) or 0;
             local Heal = (HealMin + HealMax) / 2;
 
@@ -232,7 +233,6 @@ local healingDebuffs =
     [GetSpellInfo(13218)] = function (count) return (1.0 - count * 0.10) end, -- Wound Poison
     [GetSpellInfo(19434)] = 0.50,   -- Aimed Shot
 --    [GetSpellInfo(31306)] = 0.25,   -- Carrion Swarm (Anetheron - Mount Hyjal) - TODO: This affects the casting part, not the receiving part
-    [GetSpellInfo(9035)]  = 0.80,   -- Hex of Weakness
     [GetSpellInfo(12294)] = 0.50,   -- Mortal Strike
     [GetSpellInfo(40599)] = 0.50,   -- Arcing Smash (Gurtogg Bloodboil)
     [GetSpellInfo(20572)] = 0.50,   -- Blood Fury (Orc Racial)
@@ -258,6 +258,10 @@ local healingDebuffs =
     [GetSpellInfo(41350)] = 2.00,   -- Aura of Desire (Essence of Souls - Black Temple)
     [GetSpellInfo(30843)] = 0.00,   -- Enfeeble (Prince Malchezaar - Karazhan)
 }
+if not WoTLK then
+    -- Priest racial removed in expansion.
+    healingBuffs[GetSpellInfo(9035)]  = 0.80   -- Hex of Weakness
+end
 
 local function calculateHealModifier(unit)
     local modifier = 1.0;
@@ -1108,6 +1112,13 @@ function lib:CHAT_MSG_ADDON(prefix, msg, distribution, sender)
     if (prefix ~= "HealComm") then return end
     if (sender == playerName) then return end
 
+    -- Workaround: Sometimes in battlegrounds the sender argument is not a 
+    -- fully qualified name (the realm is missing), even though the sender is 
+    -- from a different realm.
+    if (distribution == "BATTLEGROUND") then
+        sender = unitFullName(sender) or sender;       
+    end
+
     -- Get message type
     local msgtype = tonumber(msg:sub(1, 3));
     if (not msgtype) then return end
@@ -1225,10 +1236,6 @@ function lib:UNIT_SPELLCAST_SUCCEEDED(unit, spellName, spellRank)
 end
 
 function lib:UNIT_SPELLCAST_STOP(unit, spellName)
-    -- Ignore locally generated STOP events (contains spellName)
-    -- Instead wait for server generated STOP or SUCCEEDED
-    if (spellName) then return end
-
     if (unit == 'player' and CastInfoIsCasting) then
         CastInfoIsCasting = false;
         commSend("001F");
