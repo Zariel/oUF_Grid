@@ -54,7 +54,7 @@ local hightlight = [[Interface\AddOns\oUF_Grid\media\mouseoverHighlight.tga]]
 local colors = {
 	class ={
 		-- I accept patches you know
-		["DEATHKNIGHT"] = { 0.23, 0.12, 0.77 },
+		["DEATHKNIGHT"] = { 0.77, 0.12, 0.23 },
 		["DRUID"] = { 1.0 , 0.49, 0.04 },
 		["HUNTER"] = { 0.67, 0.83, 0.45 },
 		["MAGE"] = { 0.41, 0.8 , 0.94 },
