@@ -11,15 +11,13 @@ local printf = function(...) return ChatFrame3:AddMessage(string.format(...)) en
 local _G = getfenv(0)
 local oUF
 
-do
-	if _G.oufgrid then
-		oUF = _G.oufgrid
-		_G.oufgrid = nil
-	elseif _G.oUF then
-		oUF = _G.oUF
-	else
-		return
-	end
+if _G.oufgrid then
+	oUF = _G.oufgrid
+	_G.oufgrid = nil
+elseif _G.oUF then
+	oUF = _G.oUF
+else
+	return
 end
 
 local libheal = LibStub("LibHealComm-3.0", true)
@@ -274,7 +272,7 @@ if libheal then
 	libheal.RegisterCallback(heals, "HealModifierUpdate")
 end
 
-local name, rank, buffTexture, count, duration, timeLeft, dtype
+local name, rank, buffTexture, count, duration, timeLeft, dtype, isPlayer
 function f:UNIT_AURA(unit)
 	if not oUF.units[unit] then return end
 
@@ -283,7 +281,7 @@ function f:UNIT_AURA(unit)
 	if not frame.Icon then return end
 	local current, bTexture, dispell, dispellTexture
 	for i = 1, 40 do
-		name, rank, buffTexture, count, dtype, duration, timeLeft = UnitDebuff(unit, i)
+		name, rank, btexture, count, dtype, duration, timeLeft, isPlayer = UnitAura(unit, i, "HARMFUL")
 		if not name then break end
 
 		if dispellClass and dispellClass[dtype] then
