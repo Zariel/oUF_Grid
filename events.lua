@@ -368,22 +368,18 @@ function f:PLAYER_TARGET_CHANGED()
 end
 
 
-local SubGroups
-do
+local SubGroups = function()
 	local t = {}
-	SubGroups = function()
-		for i = 1, 8 do t[i] = 0 end
-		for i = 1, GetNumRaidMembers() do
-			local s = select(3, GetRaidRosterInfo(i))
-			t[s] = t[s] + 1
-		end
-		return t
+	for i = 1, 8 do t[i] = 0 end
+	for i = 1, GetNumRaidMembers() do
+		local s = select(3, GetRaidRosterInfo(i))
+		t[s] = t[s] + 1
 	end
+	return t
 end
 
 -- BG
 local bg = CreateFrame("Frame")
-bg:SetPoint("TOP", _G["oUF_Raid1"], "TOP", 0, 8)
 bg:SetBackdrop({
 	bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = true, tileSize = 16,
 	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
@@ -416,6 +412,8 @@ function f:RAID_ROSTER_UPDATE()
 		end
 	end
 
+	bg:ClearAllPoints()
+	bg:SetPoint("TOP", _G["oUF_Raid1"], "TOP", 0, 8)
 	bg:SetPoint("LEFT", _G["oUF_Raid" .. first], "LEFT", -8 , 0)
 	bg:SetPoint("RIGHT", _G["oUF_Raid" .. last], "RIGHT", 8, 0)
 	bg:SetPoint("BOTTOM", _G["oUF_Raid" .. h], "BOTTOM", 0, -8)
