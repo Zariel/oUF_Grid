@@ -1,11 +1,11 @@
 ﻿local MAJOR_VERSION = "LibHealComm-3.0";
-local MINOR_VERSION = 90000 + tonumber(("$Revision: 10 $"):match("%d+")); 
-local WoTLK = select(4,GetBuildInfo()) >= 30000
+local MINOR_VERSION = 90000 + tonumber(("$Revision: 48 $"):match("%d+"));
 
 local lib = LibStub:NewLibrary(MAJOR_VERSION, MINOR_VERSION);
 if not lib then return end
 
 local playerName = UnitName('player');
+local playerRealm = GetRealmName();
 local playerClass = select(2, UnitClass('player'));
 local isHealer = (playerClass == "PRIEST") or (playerClass == "SHAMAN") or (playerClass == "DRUID") or (playerClass == "PALADIN");
 
@@ -27,6 +27,9 @@ lib.EventFrame:RegisterEvent("UNIT_AURA");
 lib.EventFrame:RegisterEvent("UNIT_TARGET");
 lib.EventFrame:RegisterEvent("PLAYER_TARGET_CHANGED");
 lib.EventFrame:RegisterEvent("PLAYER_FOCUS_CHANGED");
+lib.EventFrame:RegisterEvent("GLYPH_ADDED");
+lib.EventFrame:RegisterEvent("GLYPH_REMOVED");
+lib.EventFrame:RegisterEvent("GLYPH_UPDATED");
 
 -- For keeping track of versions
 lib.EventFrame:RegisterEvent("PARTY_MEMBERS_CHANGED");
@@ -72,6 +75,9 @@ lib.Callbacks = LibStub("CallbackHandler-1.0"):New(lib);
 
 -- Cache of spells and heal sizes
 local SpellCache = {};
+
+-- Cache of glyphs
+local GlyphCache = {};
 
 -- Info about spells being cast by other players
 local HealTime = {};
@@ -146,6 +152,26 @@ local function unitFullName(unit)
     end
 end
 
+local function extractRealm(fullName)
+    return fullName:match("^[^%-]+%-(.+)$");
+end
+
+-- Convert a remotely generated fully qualified name to
+-- a local fully qualified name.
+local function convertRealm(fullName, remoteRealm)
+    if (remoteRealm) then
+        local name, realm = fullName:match("^([^%-]+)%-(.+)$");
+        if (not realm) then
+            -- Apply remote realm if there is no realm on the target
+            return fullName .. "-" .. remoteRealm;
+        elseif (realm == playerRealm) then
+            -- Strip realm if it is equal to the local realm
+            return name;
+        end
+    end
+    return fullName;
+end
+
 local function commSend(contents, distribution, target)
     SendAddonMessage("HealComm", contents, distribution or (InBattlegroundOrArena and "BATTLEGROUND" or "RAID"), target);
 end
@@ -191,19 +217,33 @@ local function getBaseHealSize(name)
     return SpellCache[name];
 end
 
--- Detects if a buff is present on the unit and returns the application number
-local function detectBuff(unit, buffName)
-    for i = 1, 40 do
-        local name, _, _, count = UnitBuff(unit, i);
-        if (not name) then
-            return false;
-        end
-        if (name == buffName) then
-            return count;
+local function detectGlyph(id)
+
+    -- Check if info is already cached
+    if (GlyphCache[id] ~= nil) then
+        return GlyphCache[id];
+    end
+
+    GlyphCache[id] = false;
+
+    -- Gather info (only done if not in cache)
+    for i = 1, GetNumGlyphSockets() do
+        local enabled, _, glyphId = GetGlyphSocketInfo(i);
+        if (enabled and glyphId) then
+            GlyphCache[glyphId] = true;
         end
     end
+
+    return GlyphCache[id];
 end
 
+-- Detects if a buff is present on the unit and returns the application number.
+-- Optionally, if the third argument is provided and is true, then only return
+-- true if the buff was placed by the player.
+local function detectBuff(unit, buffName, mineOnly)
+    local name, _, _, count, _, _, _, isMine = UnitBuff(unit, buffName);
+    return name and (not mineOnly or isMine) and count or false;
+end
 
 --[[
     [GetSpellInfo(604)]   = -20,      -- Dampen Magic (Rank 1)
@@ -224,8 +264,10 @@ end
 
 local healingBuffs =
 {
-    [GetSpellInfo(28176)] = 1.20,   -- Fel Armor
-    [GetSpellInfo(45234)] = function (count, rank) return (1.0 + (0.04 + 0.03 * (rank - 1)) * count) end  -- Focused Will
+    [GetSpellInfo(706)]   = 1.20, -- Demon Armor
+    [GetSpellInfo(45234)] = function (count, rank) return (1.0 + (0.04 + 0.03 * (rank - 1)) * count) end, -- Focused Will
+    [GetSpellInfo(34123)] = 1.06, -- Tree of Life
+    [GetSpellInfo(58549)] = function (count, rank, texture) return ((texture == "Interface\\Icons\\Ability_Warrior_StrengthOfArms") and (1.18 ^ count) or 1.0) end, -- Tenacity (Wintergrasp)
 }
 
 local healingDebuffs =
@@ -235,10 +277,8 @@ local healingDebuffs =
     [GetSpellInfo(30423)] = function (count) return (1.0 - count * 0.01) end, -- Nether Portal - Dominance (Netherspite - Karazhan)
     [GetSpellInfo(13218)] = function (count) return (1.0 - count * 0.10) end, -- Wound Poison
     [GetSpellInfo(19434)] = 0.50,   -- Aimed Shot
---    [GetSpellInfo(31306)] = 0.25,   -- Carrion Swarm (Anetheron - Mount Hyjal) - TODO: This affects the casting part, not the receiving part
     [GetSpellInfo(12294)] = 0.50,   -- Mortal Strike
     [GetSpellInfo(40599)] = 0.50,   -- Arcing Smash (Gurtogg Bloodboil)
-    [GetSpellInfo(20572)] = 0.50,   -- Blood Fury (Orc Racial)
     [GetSpellInfo(23169)] = 0.50,   -- Brood Affliction: Green (Chromaggus)
     [GetSpellInfo(34073)] = 0.85,   -- Curse of the Bleeding Hollow (Hellfire Peninsula)
     [GetSpellInfo(13583)] = 0.50,   -- Curse of the Deadwood (Deadwood Furbolgs - Felwood)
@@ -261,10 +301,6 @@ local healingDebuffs =
     [GetSpellInfo(41350)] = 2.00,   -- Aura of Desire (Essence of Souls - Black Temple)
     [GetSpellInfo(30843)] = 0.00,   -- Enfeeble (Prince Malchezaar - Karazhan)
 }
-if not WoTLK then
-    -- Priest racial removed in expansion.
-    healingBuffs[GetSpellInfo(9035)]  = 0.80   -- Hex of Weakness
-end
 
 local function calculateHealModifier(unit)
     local modifier = 1.0;
@@ -292,7 +328,7 @@ local function calculateHealModifier(unit)
         local mark = healingBuffs[name];
         if (mark) then
             if (type(mark) == "function") then
-                mark = mark(count, rank and tonumber(rank:match("(%d+)")));
+                mark = mark(count, rank and tonumber(rank:match("(%d+)")), texture);
             end
             modifier = modifier * mark;
         end
@@ -576,8 +612,9 @@ if (playerClass == "DRUID") then
     local tHealingTouch = GetSpellInfo(5185);
     local tRegrowth = GetSpellInfo(8936);
     local tNourish = GetSpellInfo(50464);
-    --local tRejuvenation = GetSpellInfo(774); 
-    --local tLifebloom = GetSpellInfo(33763);    
+    local tRejuvenation = GetSpellInfo(774); 
+    local tLifebloom = GetSpellInfo(33763);    
+    local tWildGrowth = GetSpellInfo(48438);    
 
 --[[HotSpells =
     {
@@ -626,11 +663,19 @@ if (playerClass == "DRUID") then
         }
     }
 
+    local idolsHealingTouch =
+    {
+        [28568] = 136, -- Idol of the Avian Heart
+        [22399] = 100, -- Idol of Health
+    }
+
     GetHealSize = function(name, rank, target)
         local i, effectiveHeal;
 
         -- Get static spell info
         local baseHealSize = getBaseHealSize(name)[rank];
+        local nBonus = 0;
+        local effectiveHealModifier = 1.0;
 
         if (not baseHealSize) then
             return nil;
@@ -641,14 +686,20 @@ if (playerClass == "DRUID") then
 
         local spellTab = HealingSpells[name];
 
-        -- Gift of Nature - Increases healing by 2% per rank on all spells
-        local talentGiftOfNature = 2 * select(5, GetTalentInfo(3, 13)) / 100 + 1;
+        -- Gift of Nature Talent - Increases effective healing by 2% per rank on all spells
+        effectiveHealModifier = effectiveHealModifier * (2 * select(5, GetTalentInfo(3, 13)) / 100 + 1);
 
         -- Process individual spells
         if (name == tHealingTouch) then
-            local nBonus;
+            local idolBonus = idolsHealingTouch[getEquippedRelicID()] or 0;
+            baseHealSize = baseHealSize + idolBonus;
 
-            -- Empowered Touch
+            -- Glyph of Healing Touch (decreases amount healed by 50%)
+            if (detectGlyph(54825)) then
+                effectiveHealModifier = effectiveHealModifier * 0.5
+            end
+
+            -- Empowered Touch Talent (increases bonus healing effects by 20% per rank)
             local talentEmpoweredTouch = 20 * select(5, GetTalentInfo(3, 15)) / 100;
 
             if (rank < 5) then
@@ -656,17 +707,21 @@ if (playerClass == "DRUID") then
             else
                 nBonus = bonus * (1.88 + talentEmpoweredTouch);
             end
-
-            effectiveHeal = talentGiftOfNature * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
         elseif (name == tRegrowth) then
-            local nBonus = bonus * 1.88 * (2.0 / 3.5) * 0.5;
-            effectiveHeal = talentGiftOfNature * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
+            -- Glyph of Regrowth (increases effective healing by 20% if player's Regrowth is on target)
+            if (detectGlyph(54743) and detectBuff(target, tRegrowth, true)) then
+                effectiveHealModifier = effectiveHealModifier * 1.2;
+            end
+            nBonus = bonus * 1.88 * (2.0 / 3.5) * 0.5;
         elseif (name == tNourish) then
-            local nBonus = bonus * 1.88 * (1.5 / 3.5);
-            effectiveHeal = talentGiftOfNature * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
-            --TODO: effectiveHeal * 1.2 if there is a rejuv/regrowth/lifebloom on target
+            -- Nourish heals for 20% more if player's HoT is on the target.
+            if (detectBuff(target, tRejuvenation, true) or detectBuff(target, tRegrowth, true) or detectBuff(target, tLifebloom, true) or detectBuff(target, tWildGrowth, true)) then
+                effectiveHealModifier = effectiveHealModifier * 1.2
+            end
+            nBonus = bonus * 1.88 * (1.5 / 3.5);
         end
 
+        effectiveHeal = effectiveHealModifier * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
         return effectiveHeal;
     end
 
@@ -679,8 +734,9 @@ if (playerClass == "PALADIN") then
     local tHolyLight = GetSpellInfo(635);
     local tFlashOfLight = GetSpellInfo(19750);
     local tDivineFavor = GetSpellInfo(20216);
-    local tBlessingOfLight = GetSpellInfo(19977);
-    local tGreaterBlessingOfLight = GetSpellInfo(25890);
+    local tSealOfLight = GetSpellInfo(20167);
+    local tAvengingWrath = GetSpellInfo(31884);
+    local tDivinePlea = GetSpellInfo(54428);
 
     HealingSpells = 
     {
@@ -696,52 +752,73 @@ if (playerClass == "PALADIN") then
         },
     }
 
-    local librams =  
+    local libramsFlashOfLight =  
     {
-        [28592] = 89, -- Libram of Souls Redeemed (TODO: may be changed to affect Holy Light in 3.0.3)
-        [25644] = 79, -- Blessed Book of Nagrand
-        [23006] = 43, -- Libram of Light
-        [23201] = 28  -- Libram of Divinity
+        [42614] = 267, -- Deadly Gladiator's Libram of Justice
+        [42613] = 236, -- Hateful Gladiator's Libram of Justice
+        [42612] = 204, -- Savage Gladiator's Libram of Justice
+        [28592] = 89,  -- Libram of Souls Redeemed (TODO: may be changed to affect Holy Light in 3.0.3)
+        [25644] = 79,  -- Blessed Book of Nagrand
+        [23006] = 43,  -- Libram of Light
+        [23201] = 28,  -- Libram of Divinity
+    }
+
+    local libramsHolyLight =
+    {
+        [40268] = 141, -- Libram of Tolerance
+        [28296] = 47,  -- Libram of the Lightbringer
     }
 
     GetHealSize = function(name, rank, target)
-        local i, divineFavor, effectiveHeal;
+        local i, effectiveHeal;
 
         -- Get static spell info
         local baseHealSize = getBaseHealSize(name)[rank];
+        local nBonus = 0;
+        local effectiveHealModifier = 1.0;
 
         if (not baseHealSize) then
             return nil;
         end
-
-        local libram = getEquippedRelicID();
 
         -- Get +healing bonus
         local bonus = GetSpellBonusHealing();
 
         local spellTab = HealingSpells[name];
 
-        -- Detect Divine Favor
+        -- Divine Favor (100% crit chance on heal spell)
         if (detectBuff('player', tDivineFavor)) then
-            divineFavor = 1.5;
-        else
-            divineFavor = 1.0;
+            effectiveHealModifier = effectiveHealModifier * 1.5;
+        end
+
+        -- Avenging Wrath (increase all healing by 20%)
+        if (detectBuff('player', tAvengingWrath)) then
+            effectiveHealModifier = effectiveHealModifier * 1.2;
+        end
+
+        -- Divine Plea (decrease all healing by 50%)
+        if (detectBuff('player', tDivinePlea)) then
+            effectiveHealModifier = effectiveHealModifier * 0.5;
+        end
+
+        -- Glyph of Seal of Light (increases healing by 5% if Seal of Light is active)
+        if (detectGlyph(54943) and detectBuff('player', tSealOfLight)) then
+            effectiveHealModifier = effectiveHealModifier * 1.05;
         end
 
         -- Healing Light - Increases healing by 4% per rank on all spells
-        local talentHealingLight = 4 * select(5, GetTalentInfo(1, 3)) / 100 + 1;
+        effectiveHealModifier = effectiveHealModifier * (4 * select(5, GetTalentInfo(1, 3)) / 100 + 1);
 
         -- Process individual spells
         if (name == tFlashOfLight) then
-            local libramBonus = librams[libram] or 0;
-            effectiveHeal = talentHealingLight * divineFavor * (baseHealSize + ((bonus + libramBonus) * 1.88 * (1.5 / 3.5)) * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
+            local libramBonus = libramsFlashOfLight[getEquippedRelicID()] or 0;
+            nBonus = (bonus + libramBonus) * 1.88 * (1.5 / 3.5) * 1.25;
         elseif (name == tHolyLight) then
-            -- Libram of the Lightbringer (Holy Light +47)
-            local libramBonus = (libram == 28296) and 47 or 0;
-            local nBonus = bonus * 1.88 * (2.5 / 3.5);
-            effectiveHeal = talentHealingLight * divineFavor * (baseHealSize + (nBonus + libramBonus) * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
+            local libramBonus = libramsHolyLight[getEquippedRelicID()] or 0;
+            nBonus = (bonus + libramBonus) * 1.88 * (2.5 / 3.5) * 1.25;
         end
 
+        effectiveHeal = effectiveHealModifier * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
         return effectiveHeal;
     end
 
@@ -761,6 +838,7 @@ if (playerClass == "PRIEST") then
     local tPrayerOfHealing = GetSpellInfo(596);
     local tPowerWordFortitude = GetSpellInfo(1243);
     --local tRenew = GetSpellInfo(139);
+    local tGrace = GetSpellInfo(47930);
 
 --[[HotSpells =
     {
@@ -814,6 +892,8 @@ if (playerClass == "PRIEST") then
 
         -- Get static spell info 
         local baseHealSize = getBaseHealSize(name)[rank];
+        local nBonus = 0;
+        local effectiveHealModifier = 1.0;
 
         if (not baseHealSize) then
             return nil;
@@ -821,12 +901,22 @@ if (playerClass == "PRIEST") then
 
         -- Get +healing bonus
         local bonus = GetSpellBonusHealing();
-        local nBonus = 0;
 
         local spellTab = HealingSpells[name];
 
+        -- Focused Power - Increases healing by 2% per rank on all spells
+        effectiveHealModifier = effectiveHealModifier * (2 * select(5, GetTalentInfo(1, 16)) / 100 + 1);
+
         -- Spiritual Healing - Increases healing by 2% per rank on all spells
-        local talentSpiritualHealing = 2 * select(5, GetTalentInfo(2, 16)) / 100 + 1;
+        effectiveHealModifier = effectiveHealModifier * (2 * select(5, GetTalentInfo(2, 16)) / 100 + 1);
+
+        -- Grace (increases healing by 2% per application on target if buff was placed by the player)
+        if (target) then
+            local grace = detectBuff(target, tGrace, true);
+            if (grace) then
+                effectiveHealModifier = effectiveHealModifier * (1.0 + 0.02 * grace);
+            end
+        end
 
         -- Process individual spells
         if (name == tLesserHeal) then
@@ -846,8 +936,7 @@ if (playerClass == "PRIEST") then
             nBonus = bonus * 1.88 * (3.0 / 3.5) * 0.5;
         end
 
-        effectiveHeal = talentSpiritualHealing * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
-
+        effectiveHeal = effectiveHealModifier * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
         return effectiveHeal;
     end
 
@@ -856,13 +945,28 @@ end
 -- Shaman --
 -- TODO: Nature's Blessing (GetTalentInfo(3, 21)) is probably not accounted for automatically anymore (or is it?)
 -- TODO: Riptide 51point resto spell (instant cast regrowth (direct + hot))
--- TODO: Tidal Waves Talent
+-- TODO: Glyph of Healing Wave (binding heal, but self-heal is percentage of actual target healed)
 if (playerClass == "SHAMAN") then
 
     local tLesserHealingWave = GetSpellInfo(8004);
     local tHealingWave = GetSpellInfo(331);
     local tChainHeal = GetSpellInfo(1064);
     local tHealingWay = GetSpellInfo(29206);
+    local tTidalWaves = GetSpellInfo(51562);
+    local tRiptide = GetSpellInfo(61295);
+    local tEarthShield = GetSpellInfo(974);
+
+--[[HotSpells =
+    {
+        [tRiptide] = 
+        {
+            Level = {60, 70, 75, 80},
+            Duration = 15,
+            Ticks = 5,
+            Pattern = "(%d+)",
+            Type = "HoT",
+        },
+    }]]--
 
     HealingSpells = 
     {
@@ -883,10 +987,25 @@ if (playerClass == "SHAMAN") then
         },
     }
 
-    local totems = {
-        [25645] = 79, -- Totem of The Plains
-        [22396] = 80, -- Totem of Life
-        [23200] = 53  -- Totem of Sustaining
+    local totemsLesserHealingWave = 
+    {
+        [42597] = 267, -- Deadly Gladiator's Totem of the Third Wind
+        [42596] = 236, -- Hateful Gladiator's Totem of the Third Wind
+        [42595] = 204, -- Savage Gladiator's Totem of the Third Wind
+        [25645] = 79,  -- Totem of The Plains
+        [22396] = 80,  -- Totem of Life
+        [23200] = 53,  -- Totem of Sustaining
+    }
+
+    local totemsHealingWave = 
+    {
+        [27544] = 88,  -- Totem of Spontaneous Regrowth
+    }
+
+    local totemsChainHeal = 
+    {
+        [38368] = 102, -- Totem of the Bay
+        [28523] = 87,  -- Totem of Healing Rains
     }
 
     GetHealSize = function(name, rank, target)
@@ -894,6 +1013,8 @@ if (playerClass == "SHAMAN") then
 
         -- Get static spell info
         local baseHealSize = getBaseHealSize(name)[rank];
+        local nBonus = 0;
+        local effectiveHealModifier = 1.0;
 
         if (not baseHealSize) then
             return nil;
@@ -902,50 +1023,62 @@ if (playerClass == "SHAMAN") then
         -- Get +healing bonus
         local bonus = GetSpellBonusHealing();
 
-        -- Purification Talent (increases healing by 2% per rank)
+        -- Purification Talent (increases healing by 2% per rank).
+        -- This is factored into effectiveHealModifier in the individual spell section below due to interaction with Improved Chain Heal.
         local talentPurification = 2 * select(5, GetTalentInfo(3, 15)) / 100 + 1; 
 
         local spellTab = HealingSpells[name];
 
         -- Process individual spells
         if (name == tLesserHealingWave) then
-            local totemBonus = totems[getEquippedRelicID()] or 0;
-            local nBonus = (bonus + totemBonus) * 1.88 * (1.5 / 3.5);
-            effectiveHeal = talentPurification * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
-        elseif (name == tHealingWave) then
-            local nBonus;
+            local totemBonus = totemsLesserHealingWave[getEquippedRelicID()] or 0;
+            effectiveHealModifier = effectiveHealModifier * talentPurification;
 
-            -- Totem of Spontaneous Regrowth 
-            local totemBonus = (getEquippedRelicID() == 27544) and 88 or 0;
+            -- Glyph of Lesser Healing Wave (increases effective healing by 20% if player's Earth Shield is on target)
+            if (detectGlyph(55438) and detectBuff(target, tEarthShield, true)) then
+                effectiveHealModifier = effectiveHealModifier * 1.2;
+            end
+
+            -- Tidal Waves Talent (increases bonus healing effects by 2% per rank)
+            local talentTidalWaves = 2 * select(5, GetTalentInfo(3, 25)) / 100;
+    
+            nBonus = (bonus + totemBonus) * (1.88 * (1.5 / 3.5) + talentTidalWaves);
+        elseif (name == tHealingWave) then
+            local totemBonus = totemsHealingWave[getEquippedRelicID()] or 0;
+            effectiveHealModifier = effectiveHealModifier * talentPurification;
+
+            -- Healing Way Buff (target buff that increases effective healing by 18%)
+            if (detectBuff(target, tHealingWay)) then
+                effectiveHealModifier = effectiveHealModifier * 1.18;
+            end;
+
+            -- Tidal Waves Talent (increases bonus healing effects by 4% per rank)
+            local talentTidalWaves = 4 * select(5, GetTalentInfo(3, 25)) / 100;
 
             -- Determine normalisation
             if (rank < 4) then
-                nBonus = (bonus + totemBonus) * 1.88 * ((1.0 + rank * 0.5) / 3.5)
+                nBonus = (bonus + totemBonus) * (1.88 * (1.0 + rank * 0.5) / 3.5 + talentTidalWaves);
             else
-                nBonus = (bonus + totemBonus) * 1.88 * (3.0 / 3.5);
+                nBonus = (bonus + totemBonus) * (1.88 * (3.0 / 3.5) + talentTidalWaves);
             end
-
-            -- Detect healing way on target
-            local hwMod = detectBuff(target, tHealingWay);
-            if (hwMod) then 
-                hwMod = 1.0 + 0.06 * hwMod;
-            else 
-                hwMod = 1.0;
-            end;
-
-            effectiveHeal = hwMod * talentPurification * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player'))); 
         elseif (name == tChainHeal) then
-            -- Totem of Healing Rains
-            local totemBonus = (getEquippedRelicID() == 28523) and 87 or 0;
+            local totemBonus = totemsChainHeal[getEquippedRelicID()] or 0;
+            baseHealSize = baseHealSize + totemBonus;
 
             -- Improved Chain Heal Talent (increases healing by 10% per rank)
-            local talentImprovedChainHeal = 10 * select(5, GetTalentInfo(3, 20)) / 100 + 1;
+            local talentImprovedChainHeal = 10 * select(5, GetTalentInfo(3, 20)) / 100;
 
-            local nBonus = (bonus + totemBonus) * 1.88 * (2.5 / 3.5);
+            effectiveHealModifier = effectiveHealModifier * (talentPurification + talentImprovedChainHeal);
 
-            effectiveHeal = talentImprovedChainHeal * talentPurification * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
+            -- Riptide Buff (target buff that increases effective healing by 25%)
+            if (detectBuff(target, tRiptide, true)) then
+                effectiveHealModifier = effectiveHealModifier * 1.25;
+            end
+            
+            nBonus = bonus * 1.88 * (2.5 / 3.5);
         end
 
+        effectiveHeal = effectiveHealModifier * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
         return effectiveHeal;
     end
 
@@ -1004,7 +1137,22 @@ end
 
 function lib:LEARNED_SPELL_IN_TAB()
     -- Invalidate cached spell data when learning new spells
-    SpellCache = {};       
+    SpellCache = {};
+end
+
+function lib:GLYPH_ADDED()
+    -- Invalidate cached glyph data when updating glyphs
+    GlyphCache = {};
+end
+
+function lib:GLYPH_REMOVED()
+    -- Invalidate cached glyph data when updating glyphs
+    GlyphCache = {};
+end
+
+function lib:GLYPH_UPDATED()
+    -- Invalidate cached glyph data when updating glyphs
+    GlyphCache = {};
 end
 
 function lib:UNIT_SPELLCAST_SENT(unit, spellName, spellRank, targetName)
@@ -1083,6 +1231,9 @@ function lib:CHAT_MSG_ADDON(prefix, msg, distribution, sender)
             local endTime = select(6, UnitCastingInfo(sender));
 
             if (endTime) then
+                if (distribution == "BATTLEGROUND") then
+                    targetName = convertRealm(targetName, extractRealm(sender));
+                end
                 endTime = endTime / 1000;
                 entryUpdate(sender, targetName, healSize, endTime);
                 self.Callbacks:Fire("HealComm_DirectHealStart", sender, healSize, endTime, targetName);
@@ -1104,6 +1255,12 @@ function lib:CHAT_MSG_ADDON(prefix, msg, distribution, sender)
             local endTime = select(6, UnitCastingInfo(sender));
 
             if (endTime) then
+                if (distribution == "BATTLEGROUND") then
+                    local senderRealm = extractRealm(sender);
+                    for k, targetName in pairs(targetNames) do
+                        targetNames[k] = convertRealm(targetName, senderRealm);
+                    end
+                end
                 endTime = endTime / 1000;
                 tinsert(targetNames, 1, sender);
                 entryUpdate(sender, targetNames, healSize, endTime);
@@ -1160,34 +1317,22 @@ function lib:UNIT_SPELLCAST_DELAYED(unit)
 end
 
 function lib:UNIT_SPELLCAST_SUCCEEDED(unit, spellName, spellRank, spellCastIndex)
-    if (unit == 'player') then
-        if (CastInfoIsCasting) then
-            CastInfoIsCasting = false;
-            commSend("001S");
+    if (unit ~= 'player') then return end
+    
+    if (CastInfoIsCasting) then
+        CastInfoIsCasting = false;
+        commSend("001S");
 
-            --[[
-            if (playerClass == "DRUID") then
-                local spellInfo = HotSpells[spellName]; -- TODO: check directly on spell name instead
-                if (spellInfo) then
-                    -- TODO: Regrowth hot-buff.
-                    -- HOTStart(SentTargetName, Duration, Ticks, HealPerTick, EndHeal)
-                end
-            end
-            ]]--
-
-            if (type(CastInfoHealingTargetNames) == "table") then
-                self.Callbacks:Fire("HealComm_DirectHealStop", playerName, CastInfoHealingSize, true, unpack(CastInfoHealingTargetNames));
-            elseif (CastInfoHealingTargetNames) then
-                self.Callbacks:Fire("HealComm_DirectHealStop", playerName, CastInfoHealingSize, true, CastInfoHealingTargetNames);
-            end
-        else
-            if (LastSpellCastIndex ~= spellCastIndex) then
-                --DEFAULT_CHAT_FRAME:AddMessage("Real Instant Cast!");
-            else
-                --DEFAULT_CHAT_FRAME:AddMessage("Fake Instant Cast!");
-            end
+        if (type(CastInfoHealingTargetNames) == "table") then
+            self.Callbacks:Fire("HealComm_DirectHealStop", playerName, CastInfoHealingSize, true, unpack(CastInfoHealingTargetNames));
+        elseif (CastInfoHealingTargetNames) then
+            self.Callbacks:Fire("HealComm_DirectHealStop", playerName, CastInfoHealingSize, true, CastInfoHealingTargetNames);
         end
-    end
+    else
+        if (LastSpellCastIndex ~= spellCastIndex) then
+            -- Instant Cast Spells
+        end
+    end    
 end
 
 function lib:UNIT_SPELLCAST_STOP(unit, spellName, spellRank, spellCastIndex)
@@ -1209,6 +1354,9 @@ function lib:PLAYER_ALIVE()
     -- prior to this event firing (no messages sent and InBattlegroundOrArena and InRaidOrParty
     -- are probably not correctly initialised).
     lib:Initialise();
+
+    -- Only receive once
+    self.EventFrame:UnregisterEvent("PLAYER_ALIVE");
 end
 
 function lib:PLAYER_ENTERING_WORLD()
