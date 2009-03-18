@@ -388,7 +388,6 @@ bg:SetBackdrop({
 bg:SetBackdropColor(0, 0, 0, 0.6)
 bg:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
 bg:SetFrameLevel(0)
-bg:Show()
 
 function f:RAID_ROSTER_UPDATE()
 	if not UnitInRaid("player") then
