@@ -254,12 +254,13 @@ if libheal then
 			local val = (mod * incHeal)
 			local incPer = val / UnitHealthMax(unit)
 			local per = UnitHealth(unit) / UnitHealthMax(unit)
-			local size = incPer * height
-			if size + (height * per) >= height then
-				size = size - (size - height - (per * height))
+			local incSize = incPer * height
+			local size = height * per
+			if incSize + size >= height then
+				incSize = height - size
 			end
-			frame.heal:SetHeight(size)
-			frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, height * per)
+			frame.heal:SetHeight(incSize)
+			frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, size)
 			frame.heal:Show()
 		else
 			frame.heal:Hide()
