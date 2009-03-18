@@ -247,7 +247,7 @@ if libheal then
 			frame.heal = heal
 		end
 
-		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime())) or ownHeals[name]
+		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime())) or 0
 		if incHeal and incHeal > 0 then
 			incHeal = incHeal + (ownHeals[name] or 0)
 			local mod = libheal:UnitHealModifierGet(name)
