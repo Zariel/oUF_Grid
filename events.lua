@@ -248,17 +248,19 @@ if libheal then
 		end
 
 		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime())) or 0
-		if incHeal and incHeal > 0 then
-			incHeal = incHeal + (ownHeals[name] or 0)
-			local mod = libheal:UnitHealModifierGet(name)
-			local val = (mod * incHeal)
-			local incPer = val / UnitHealthMax(unit)
+		incHeal = incHeal + (ownHeals[name] or 0)
+
+		if incHeal > 0 then
+			local incPer = (libheal:UnitHealModifierGet(name) * incHeal) / UnitHealthMax(unit)
 			local per = UnitHealth(unit) / UnitHealthMax(unit)
+
 			local incSize = incPer * height
 			local size = height * per
+
 			if incSize + size >= height then
 				incSize = height - size
 			end
+
 			frame.heal:SetHeight(incSize)
 			frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, size)
 			frame.heal:Show()
@@ -344,8 +346,8 @@ function f:UNIT_AURA(unit)
 end
 
 function f:PLAYER_TARGET_CHANGED()
-	local id = UnitInRaid("target") and UnitInRaid("target") + 1
-	local frame = id and UnitInRaid("target") and oUF.units["raid" .. id]
+	local inRaid = UnitInRaid("target")
+	local frame = inRaid and UnitExists("raid" .. inRaid + 1) and oUF.units["raid" .. inRaid + 1]
 	if not frame then
 		if coloredFrame then
 			if not oUF.units[coloredFrame].Dispell then
