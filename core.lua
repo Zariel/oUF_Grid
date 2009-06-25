@@ -25,8 +25,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ]]
 
-local print = function(str) return ChatFrame3:AddMessage(tostring(str)) end
-local printf = function(...) return ChatFrame3:AddMessage(string.format(...)) end
 local _G = getfenv(0)
 local oUF = _G.oufgrid or _G.oUF
 
@@ -117,7 +115,7 @@ local Health_Update = function(self, event, unit, bar, current, max)
 	if per > 0.9 or UnitIsDeadOrGhost(unit) then
 		self.Name:SetText(self.name)
 	else
-		self.Name:SetFormattedText("-%0.1f",math.floor(def/100)/10)
+		self.Name:SetFormattedText("-%0.1f", math.floor(def/100)/10)
 	end
 
 	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
@@ -148,11 +146,14 @@ local frame = function(settings, self, unit)
 	self:SetScript("OnLeave", OnLeave)
 
 	self:RegisterForClicks("anyup")
+	--self:SetMovable(true)
+	--self:RegisterForDrag("LleftButton")
 
 	self:SetBackdrop({
 		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", tile = true, tileSize = 16,
 		insets = {left = -2, right = -2, top = -2, bottom = -2},
 	})
+
 	self:SetBackdropColor(0, 0, 0, 1)
 
 	self:SetAttribute("*type2", "menu")
@@ -203,7 +204,7 @@ local frame = function(settings, self, unit)
 	self.Name = name
 	self.UNIT_NAME_UPDATE = Name_Update
 
-	local border = hp:CreateTexture(nil, "OVERLAY")
+	local border = hp:CreateTexture(nil, "ARTWORK")
 	border:SetPoint("LEFT", self, "LEFT", -4, 0)
 	border:SetPoint("RIGHT", self, "RIGHT", 4, 0)
 	border:SetPoint("TOP", self, "TOP", 0, 4)
@@ -264,9 +265,83 @@ for i = 1, 8 do
 	r:SetManyAttributes(
 		"showRaid", true,
 		"groupFilter", i,
-		"yOffset", -10
+		"yOffset", - 10
 	)
 
 	r:Show()
 	raid[i] = r
 end
+
+local SubGroups = function()
+	local t = {}
+	for i = 1, 8 do t[i] = 0 end
+	for i = 1, GetNumRaidMembers() do
+		local s = select(3, GetRaidRosterInfo(i))
+		t[s] = t[s] + 1
+	end
+	return t
+end
+
+-- BG
+local bg = CreateFrame("Frame")
+bg:SetBackdrop({
+	bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = true, tileSize = 16,
+	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
+	insets = {left = 2, right = 2, top = 2, bottom = 2}
+})
+bg:SetBackdropColor(0, 0, 0, 0.6)
+bg:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+bg:SetFrameLevel(0)
+
+bg:SetScript("OnEvent", function(self, event, ...)
+	return self[event](self, event, ...)
+end)
+
+function bg:RAID_ROSTER_UPDATE()
+	if not UnitInRaid("player") then
+		if UnitExists("party1") then
+			return self:PARTY_MEMBERS_CHANGED()
+		else
+			return self:Hide()
+		end
+	else
+		self:Show()
+	end
+
+	local roster = SubGroups()
+
+	local h, last, first = 1
+	for k, v in ipairs(roster) do
+		if v > 0 then
+			if not first then
+				first = k
+			end
+			last = k
+		end
+		if v > roster[h] then
+			h = k
+		end
+	end
+
+	self:ClearAllPoints()
+	self:SetPoint("TOP", _G["oUF_Raid1"], "TOP", 0, 8)
+	self:SetPoint("LEFT", _G["oUF_Raid" .. first], "LEFT", -8 , 0)
+	self:SetPoint("RIGHT", _G["oUF_Raid" .. last], "RIGHT", 8, 0)
+	self:SetPoint("BOTTOM", _G["oUF_Raid" .. h], "BOTTOM", 0, -8)
+end
+
+function bg:PARTY_MEMBERS_CHANGED()
+	if UnitInRaid("player") then return end
+
+	if not UnitExists("party" .. 1) then return self:Hide() end
+
+	self:ClearAllPoints()
+	self:SetPoint("BOTTOMRIGHT", _G["oUF_Raid1"], "BOTTOMRIGHT", 8, - 8)
+	self:SetPoint("TOPLEFT", _G["oUF_Raid1"], "TOPLEFT", - 8, 8)
+	self:Show()
+end
+
+bg.PLAYER_LOGIN = bg.RAID_ROSTER_UPDATE
+bg:RegisterEvent("PLAYER_LOGIN")
+bg:RegisterEvent("RAID_ROSTER_UPDATE")
+bg:RegisterEvent("PARTY_MEMBERS_CHANGED")

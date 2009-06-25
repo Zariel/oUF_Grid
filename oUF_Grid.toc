@@ -1,4 +1,4 @@
-## Interface: 30000
+## Interface: 30100
 ## Author: Zariel
 ## Title: oUF_Grid
 ## Version: 3.0.3-19
@@ -9,7 +9,7 @@ lib\UTF8\utf8data.lua
 lib\UTF8\utf8.lua
 lib\LibHealComm-3.0\lib.xml
 
-oUF\oUF.xml
+## oUF\oUF.xml
 
 core.lua
 events.lua

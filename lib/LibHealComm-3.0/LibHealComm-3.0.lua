@@ -1,5 +1,5 @@
-﻿local MAJOR_VERSION = "LibHealComm-3.0";
-local MINOR_VERSION = 90000 + tonumber(("$Revision: 48 $"):match("%d+"));
+local MAJOR_VERSION = "LibHealComm-3.0";
+local MINOR_VERSION = 90000 + tonumber(("$Revision: 56 $"):match("%d+"));
 
 local lib = LibStub:NewLibrary(MAJOR_VERSION, MINOR_VERSION);
 if not lib then return end
@@ -37,7 +37,7 @@ lib.EventFrame:RegisterEvent("RAID_ROSTER_UPDATE");
 
 -- Prune data at zone change
 lib.EventFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
-    
+
 -- Only listen to these events if player is healing class
 if (isHealer) then
     lib.EventFrame:RegisterEvent("UNIT_SPELLCAST_SENT");
@@ -109,7 +109,11 @@ local Versions = {};
 
 -- Battleground/Arena/Group Indicators
 local InBattlegroundOrArena;
-local InRaidOrParty;
+local InRaid;
+local InParty;
+
+-- Subgroup of raid members
+local Subgroup = {};
 
 
 ---------------------------------
@@ -137,6 +141,7 @@ local GetTalentInfo = GetTalentInfo;
 local UnitExists = UnitExists;
 local tinsert = table.insert;
 local tconcat = table.concat;
+local twipe = table.wipe;
 
 
 ---------------
@@ -192,9 +197,9 @@ local function getBaseHealSize(name)
     while true do
 
         local spellName, spellRank = GetSpellName(i, BOOKTYPE_SPELL);
-        
-        if (not spellName) then 
-            break 
+
+        if (not spellName) then
+            break
         end
 
         if (spellName == name) then
@@ -203,7 +208,7 @@ local function getBaseHealSize(name)
             -- Determine rank
             spellRank = tonumber(spellRank:match("(%d+)"));
             lib.Tooltip:SetSpell(i, BOOKTYPE_SPELL);
-    
+
             -- Determine healing
             local HealMin, HealMax = select(3, string.find(lib.TooltipTextLeft4:GetText() or lib.TooltipTextLeft3:GetText() or "", "(%d+) ?[\195\160tobisa到~\-]+ ?(%d+)"));
             HealMin, HealMax = tonumber(HealMin) or 0, tonumber(HealMax) or 0;
@@ -237,12 +242,12 @@ local function detectGlyph(id)
     return GlyphCache[id];
 end
 
--- Detects if a buff is present on the unit and returns the application number.
--- Optionally, if the third argument is provided and is true, then only return
--- true if the buff was placed by the player.
+-- Detects if a buff is present on the unit and returns the application number,
+-- otherwise return false. Optionally, if the third argument is provided and is
+-- true, then return false if the buff was not placed by the player.
 local function detectBuff(unit, buffName, mineOnly)
-    local name, _, _, count, _, _, _, isMine = UnitBuff(unit, buffName);
-    return name and (not mineOnly or isMine) and count or false;
+    local name, _, _, count, _, _, _, applier = UnitBuff(unit, buffName);
+    return name and (not mineOnly or applier and UnitIsUnit(applier, 'player')) and count or false;
 end
 
 --[[
@@ -388,8 +393,8 @@ local function entryUpdate(healerName, targetNames, healSize, healTime)
             HealSize[targetName][healerName] = healSize;
         end
     elseif (targetNames) then
-        if (not HealSize[targetNames]) then 
-            HealSize[targetNames] = {}; 
+        if (not HealSize[targetNames]) then
+            HealSize[targetNames] = {};
         end
         HealSize[targetNames][healerName] = healSize;
     end
@@ -415,7 +420,7 @@ end
 --[[ UnitIncomingHealGet(unit, time)
 
 Description: Retrieve info about the incoming heals to a specific
-             target. The second argument specifies a boundary time, 
+             target. The second argument specifies a boundary time,
              relative to the current time. Examples:
 
              UnitIncomingHealGet("Kaki", GetTime() + 3)
@@ -426,7 +431,7 @@ Description: Retrieve info about the incoming heals to a specific
 
              Retrieves info about the incoming heals on the specified
              target. incomingHealBefore will contain the sum of heals
-             that will land within the next 3 seconds, and 
+             that will land within the next 3 seconds, and
              incomingHealAfter will contain the sum of heals that will
              land after 3 seconds.
 
@@ -480,7 +485,7 @@ end
 
 --[[ UnitCastingHealGet(unit)
 
-Description: Retrieve info about the direct healing spell 
+Description: Retrieve info about the direct healing spell
              currently being cast by any unit. Examples:
 
              UnitCastingHealGet("Kaki");
@@ -513,11 +518,11 @@ function lib:UnitCastingHealGet(unit)
             return healSize, endTime, targetNames;
         end
     end
-end 
+end
 
 --[[ UnitHealModifierGet(unit)
 
-Description: Returns the modifier to healing (as a factor) 
+Description: Returns the modifier to healing (as a factor)
              caused by buffs and debuffs. Examples:
 
              UnitHealModifierGet("Kaki");
@@ -546,20 +551,20 @@ end
 function lib:GetRaidOrPartyVersions()
     local tab = {};
 
-    if (GetNumRaidMembers() > 0) then
+    if (InRaid) then
         for i = 1, GetNumRaidMembers() do
-            local name = unitFullName('raid' .. i);    
+            local name = unitFullName('raid' .. i);
             if (not (name == playerName)) then
                 tab[name] = Versions[name] or false;
             end
         end
-    elseif (GetNumPartyMembers() > 0) then
+    elseif (InParty) then
         for i = 1, GetNumPartyMembers() do
             local name = unitFullName('party' .. i);
             tab[name] = Versions[name] or false;
         end
     end
-    
+
     tab[playerName] = MINOR_VERSION;
 
     return tab;
@@ -576,9 +581,9 @@ function lib:GetGuildVersions()
             if (online and not (name == playerName)) then
                 tab[name] = Versions[name] or false;
             end
-        end  
+        end
     end
-    
+
     tab[playerName] = MINOR_VERSION;
 
     return tab;
@@ -603,7 +608,7 @@ local GetHealSize;
 
 -- Druid --
 
--- TODO: 
+-- TODO:
 -- Talent: Empowered Rejuvenation. Increase effect of all HOTs by 4%-20%
 -- Idol: Idol of Rejuvenation
 
@@ -612,13 +617,13 @@ if (playerClass == "DRUID") then
     local tHealingTouch = GetSpellInfo(5185);
     local tRegrowth = GetSpellInfo(8936);
     local tNourish = GetSpellInfo(50464);
-    local tRejuvenation = GetSpellInfo(774); 
-    local tLifebloom = GetSpellInfo(33763);    
-    local tWildGrowth = GetSpellInfo(48438);    
+    local tRejuvenation = GetSpellInfo(774);
+    local tLifebloom = GetSpellInfo(33763);
+    local tWildGrowth = GetSpellInfo(48438);
 
 --[[HotSpells =
     {
-        [tRegrowth] = 
+        [tRegrowth] =
         {
             Level = {17, 23, 29, 35, 41, 47, 53, 59, 65, 70, 76, 80},
             Duration = 21,
@@ -626,7 +631,7 @@ if (playerClass == "DRUID") then
             Pattern = "(%d+)[^0-9]+%d+[^0-9]+$",
             Type = "HoT",
         },
-        [tRejuvenation] = 
+        [tRejuvenation] =
         {
             Level = {9, 15, 21, 27, 33, 39, 45, 51, 57, 59, 62, 68, 74, 79, 80},
             Duration = 12,
@@ -634,7 +639,7 @@ if (playerClass == "DRUID") then
             Pattern = "(%d+)",
             Type = "HoT",
         },
-        [tLifebloom] = 
+        [tLifebloom] =
         {
             Level = {71, 79, 80},
             Duration = 7,
@@ -644,14 +649,14 @@ if (playerClass == "DRUID") then
         },
     }]]--
 
-    HealingSpells = 
+    HealingSpells =
     {
-        [tHealingTouch] = 
+        [tHealingTouch] =
         {
             Level = {1, 8, 14, 20, 26, 32, 38, 44, 50, 56, 60, 62, 69, 74, 79},
             Type = "Direct",
         },
-        [tRegrowth] = 
+        [tRegrowth] =
         {
             Level = {12, 18, 24, 30, 36, 42, 48, 54, 60, 65, 71, 77},
             Type = "Direct",
@@ -667,6 +672,11 @@ if (playerClass == "DRUID") then
     {
         [28568] = 136, -- Idol of the Avian Heart
         [22399] = 100, -- Idol of Health
+    }
+
+    local idolsNourish =
+    {
+        [46138] = 187, -- Idol of the Flourishing Life
     }
 
     GetHealSize = function(name, rank, target)
@@ -714,11 +724,12 @@ if (playerClass == "DRUID") then
             end
             nBonus = bonus * 1.88 * (2.0 / 3.5) * 0.5;
         elseif (name == tNourish) then
+            local idolBonus = idolsNourish[getEquippedRelicID()] or 0;
             -- Nourish heals for 20% more if player's HoT is on the target.
             if (detectBuff(target, tRejuvenation, true) or detectBuff(target, tRegrowth, true) or detectBuff(target, tLifebloom, true) or detectBuff(target, tWildGrowth, true)) then
                 effectiveHealModifier = effectiveHealModifier * 1.2
             end
-            nBonus = bonus * 1.88 * (1.5 / 3.5);
+            nBonus = (bonus + idolBonus) * 1.88 * (1.5 / 3.5);
         end
 
         effectiveHeal = effectiveHealModifier * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
@@ -728,7 +739,6 @@ if (playerClass == "DRUID") then
 end
 
 -- Paladin --
--- TODO: Track Beacon of Light (GetSpellInfo(53563) for name).
 if (playerClass == "PALADIN") then
 
     local tHolyLight = GetSpellInfo(635);
@@ -738,22 +748,23 @@ if (playerClass == "PALADIN") then
     local tAvengingWrath = GetSpellInfo(31884);
     local tDivinePlea = GetSpellInfo(54428);
 
-    HealingSpells = 
+    HealingSpells =
     {
-        [tHolyLight] = 
+        [tHolyLight] =
         {
             Level = {1, 6, 14, 22, 30, 38, 46, 54, 60, 62, 70, 75, 80},
             Type = "Direct",
         },
-        [tFlashOfLight] = 
+        [tFlashOfLight] =
         {
             Level = {20, 26, 34, 42, 50, 58, 66, 74, 79},
             Type = "Direct",
         },
     }
 
-    local libramsFlashOfLight =  
+    local libramsFlashOfLight =
     {
+        [42615] = 320, -- Furious Gladiator's Libram of Justice
         [42614] = 267, -- Deadly Gladiator's Libram of Justice
         [42613] = 236, -- Hateful Gladiator's Libram of Justice
         [42612] = 204, -- Savage Gladiator's Libram of Justice
@@ -765,6 +776,7 @@ if (playerClass == "PALADIN") then
 
     local libramsHolyLight =
     {
+        [45436] = 160, -- Libram of the Resolute
         [40268] = 141, -- Libram of Tolerance
         [28296] = 47,  -- Libram of the Lightbringer
     }
@@ -825,11 +837,10 @@ if (playerClass == "PALADIN") then
 end
 
 -- Priest --
-
 -- TODO: Talent: Improved Renew: increases renew by 5%-10%-15%
--- Healing_Done = (Renew_Base + (Healbonus * Downrankfactor) ) * Improved_Renew * Spiritual_Healing 
+-- Healing_Done = (Renew_Base + (Healbonus * Downrankfactor) ) * Improved_Renew * Spiritual_Healing
 if (playerClass == "PRIEST") then
-    
+
     local tLesserHeal = GetSpellInfo(2050);
     local tHeal = GetSpellInfo(2054);
     local tGreaterHeal = GetSpellInfo(2060);
@@ -842,7 +853,7 @@ if (playerClass == "PRIEST") then
 
 --[[HotSpells =
     {
-        [tRenew] = 
+        [tRenew] =
         {
             Level = {8, 14, 20, 26, 32, 38, 44, 50, 56, 60, 65, 74, 79, 80},
             Duration = 15,
@@ -852,45 +863,44 @@ if (playerClass == "PRIEST") then
         },
     }]]--
 
-    HealingSpells = 
+    HealingSpells =
     {
-        [tLesserHeal] = 
+        [tLesserHeal] =
         {
             Level = {1, 4, 10},
             Type = "Direct"
         },
-        [tHeal] = 
+        [tHeal] =
         {
             Level = {16, 22, 28, 34},
             Type = "Direct"
         },
-        [tGreaterHeal] = 
+        [tGreaterHeal] =
         {
             Level = {40, 46, 52, 58, 60, 63, 68, 73, 78},
             Type = "Direct",
         },
-        [tFlashHeal] = 
+        [tFlashHeal] =
         {
             Level = {20, 26, 32, 38, 44, 50, 56, 61, 67, 73, 79},
             Type = "Direct",
         },
-        [tBindingHeal] =  
+        [tBindingHeal] =
         {
             Level = {64, 72, 78},
             Type = "Binding"
         },
-        [tPrayerOfHealing] = 
+        [tPrayerOfHealing] =
         {
             Level = {30, 40, 50, 60, 60, 68, 76},
             Type = "Party",
-            InRange = function(unit) return IsSpellInRange(tPowerWordFortitude, unit) == 1 end
         },
     }
 
     GetHealSize = function(name, rank, target)
         local i, effectiveHeal;
 
-        -- Get static spell info 
+        -- Get static spell info
         local baseHealSize = getBaseHealSize(name)[rank];
         local nBonus = 0;
         local effectiveHealModifier = 1.0;
@@ -958,7 +968,7 @@ if (playerClass == "SHAMAN") then
 
 --[[HotSpells =
     {
-        [tRiptide] = 
+        [tRiptide] =
         {
             Level = {60, 70, 75, 80},
             Duration = 15,
@@ -968,27 +978,28 @@ if (playerClass == "SHAMAN") then
         },
     }]]--
 
-    HealingSpells = 
+    HealingSpells =
     {
-        [tLesserHealingWave] = 
+        [tLesserHealingWave] =
         {
             Level = {20, 28, 36, 44, 52, 60, 66, 72, 77},
             Type = "Direct",
         },
-        [tHealingWave] = 
+        [tHealingWave] =
         {
             Level = {1, 6, 12, 18, 24, 32, 40, 48, 56, 60, 63, 70, 75, 80},
             Type = "Direct",
         },
-        [tChainHeal] = 
+        [tChainHeal] =
         {
             Level = {40, 46, 54, 61, 68, 74, 80},
             Type = "Direct",
         },
     }
 
-    local totemsLesserHealingWave = 
+    local totemsLesserHealingWave =
     {
+        [42598] = 320, -- Furious Gladiator's Totem of the Third Wind
         [42597] = 267, -- Deadly Gladiator's Totem of the Third Wind
         [42596] = 236, -- Hateful Gladiator's Totem of the Third Wind
         [42595] = 204, -- Savage Gladiator's Totem of the Third Wind
@@ -997,13 +1008,14 @@ if (playerClass == "SHAMAN") then
         [23200] = 53,  -- Totem of Sustaining
     }
 
-    local totemsHealingWave = 
+    local totemsHealingWave =
     {
         [27544] = 88,  -- Totem of Spontaneous Regrowth
     }
 
-    local totemsChainHeal = 
+    local totemsChainHeal =
     {
+        [45114] = 243, -- Steamcaller's Totem
         [38368] = 102, -- Totem of the Bay
         [28523] = 87,  -- Totem of Healing Rains
     }
@@ -1025,7 +1037,7 @@ if (playerClass == "SHAMAN") then
 
         -- Purification Talent (increases healing by 2% per rank).
         -- This is factored into effectiveHealModifier in the individual spell section below due to interaction with Improved Chain Heal.
-        local talentPurification = 2 * select(5, GetTalentInfo(3, 15)) / 100 + 1; 
+        local talentPurification = 2 * select(5, GetTalentInfo(3, 15)) / 100 + 1;
 
         local spellTab = HealingSpells[name];
 
@@ -1041,7 +1053,7 @@ if (playerClass == "SHAMAN") then
 
             -- Tidal Waves Talent (increases bonus healing effects by 2% per rank)
             local talentTidalWaves = 2 * select(5, GetTalentInfo(3, 25)) / 100;
-    
+
             nBonus = (bonus + totemBonus) * (1.88 * (1.5 / 3.5) + talentTidalWaves);
         elseif (name == tHealingWave) then
             local totemBonus = totemsHealingWave[getEquippedRelicID()] or 0;
@@ -1074,7 +1086,7 @@ if (playerClass == "SHAMAN") then
             if (detectBuff(target, tRiptide, true)) then
                 effectiveHealModifier = effectiveHealModifier * 1.25;
             end
-            
+
             nBonus = bonus * 1.88 * (2.5 / 3.5);
         end
 
@@ -1122,12 +1134,12 @@ function lib:UNIT_AURA(unit)
     local oldModifier = HealModifier[targetName];
     local newModifier = calculateHealModifier(unit);
     if (oldModifier) then
-        if (newModifier == oldModifier) then 
-            return 
+        if (newModifier == oldModifier) then
+            return
         end
     else
-        if (newModifier == 1.0) then 
-            return 
+        if (newModifier == 1.0) then
+            return
         end
     end
     HealModifier[targetName] = newModifier;
@@ -1177,7 +1189,7 @@ function lib:UNIT_SPELLCAST_START(unit, spellName, spellRank)
     local spellInfo = HealingSpells[spellName];
 
     -- Only process healing spells
-    if (spellInfo) then 
+    if (spellInfo) then
         if (spellInfo.Type == "Direct") then
             CastInfoHealingTargetNames = SentTargetName;
             CastInfoHealingSize = GetHealSize(spellName, tonumber(spellRank:match("(%d+)")), SentTargetName) or 0;
@@ -1193,16 +1205,31 @@ function lib:UNIT_SPELLCAST_START(unit, spellName, spellRank)
             self.Callbacks:Fire("HealComm_DirectHealStart", playerName, CastInfoHealingSize, CastInfoEndTime, unpack(CastInfoHealingTargetNames));
             commSend(string.format("002%05d%s", math.min(CastInfoHealingSize, 99999), SentTargetName));
         elseif (spellInfo.Type == "Party") then
-            CastInfoHealingTargetNames = {};
-            if (spellInfo.InRange('party1')) then tinsert(CastInfoHealingTargetNames, unitFullName('party1')) end
-            if (spellInfo.InRange('party2')) then tinsert(CastInfoHealingTargetNames, unitFullName('party2')) end
-            if (spellInfo.InRange('party3')) then tinsert(CastInfoHealingTargetNames, unitFullName('party3')) end
-            if (spellInfo.InRange('party4')) then tinsert(CastInfoHealingTargetNames, unitFullName('party4')) end
+            CastInfoHealingTargetNames = {SentTargetName};
+            if (InRaid) then
+                local targetSubgroup = Subgroup[SentTargetName];
+                if (targetSubgroup) then
+                    for name, subgroup in pairs(Subgroup) do
+                        if ((subgroup == targetSubgroup) and (name ~= SentTargetName) and (UnitIsVisible(name))) then
+                            tinsert(CastInfoHealingTargetNames, name);
+                        end
+                    end
+                end
+            elseif (InParty and UnitInParty(SentTargetName)) then
+                if (playerName ~= SentTargetName) then
+                    tinsert(CastInfoHealingTargetNames, playerName);
+                end
+                for i = 1, GetNumPartyMembers() do
+                    local name = unitFullName("party" .. i);
+                    if (name and (name ~= SentTargetName) and (UnitIsVisible(name))) then
+                        tinsert(CastInfoHealingTargetNames, name);
+                    end
+                end
+            end
             CastInfoHealingSize = GetHealSize(spellName, tonumber(spellRank:match("(%d+)"))) or 0;
             CastInfoIsCasting = true;
             CastInfoEndTime = (select(6, UnitCastingInfo('player')) or 0) / 1000;
-            commSend(string.format("002%05d%s", math.min(CastInfoHealingSize, 99999), tconcat(CastInfoHealingTargetNames, ":")));
-            tinsert(CastInfoHealingTargetNames, 1, playerName);
+            commSend(string.format("003%05d%s", math.min(CastInfoHealingSize, 99999), tconcat(CastInfoHealingTargetNames, ":")));
             self.Callbacks:Fire("HealComm_DirectHealStart", playerName, CastInfoHealingSize, CastInfoEndTime, unpack(CastInfoHealingTargetNames));
         end
     end
@@ -1212,11 +1239,11 @@ function lib:CHAT_MSG_ADDON(prefix, msg, distribution, sender)
     if (prefix ~= "HealComm") then return end
     if (sender == playerName) then return end
 
-    -- Workaround: Sometimes in battlegrounds the sender argument is not a 
-    -- fully qualified name (the realm is missing), even though the sender is 
+    -- Workaround: Sometimes in battlegrounds the sender argument is not a
+    -- fully qualified name (the realm is missing), even though the sender is
     -- from a different realm.
     if (distribution == "BATTLEGROUND") then
-        sender = unitFullName(sender) or sender;       
+        sender = unitFullName(sender) or sender;
     end
 
     -- Get message type
@@ -1245,9 +1272,9 @@ function lib:CHAT_MSG_ADDON(prefix, msg, distribution, sender)
         if (type(targetNames) == "table") then
             self.Callbacks:Fire("HealComm_DirectHealStop", sender, healSize, msg:sub(4, 4) == "S", unpack(targetNames));
         elseif (targetNames) then
-            self.Callbacks:Fire("HealComm_DirectHealStop", sender, healSize, msg:sub(4, 4) == "S", targetNames);        
+            self.Callbacks:Fire("HealComm_DirectHealStop", sender, healSize, msg:sub(4, 4) == "S", targetNames);
         end
-    elseif (msgtype == 2) then -- MultiTargetHealStart
+    elseif ((msgtype == 2) or (msgtype == 3)) then -- MultiTargetHealStart
         local healSize = tonumber(msg:sub(4, 8));
         local targetNames = {strsplit(":", msg:sub(9, -1))};
 
@@ -1262,7 +1289,9 @@ function lib:CHAT_MSG_ADDON(prefix, msg, distribution, sender)
                     end
                 end
                 endTime = endTime / 1000;
-                tinsert(targetNames, 1, sender);
+                if (msgtype == 2) then
+                    tinsert(targetNames, 1, sender);
+                end
                 entryUpdate(sender, targetNames, healSize, endTime);
                 self.Callbacks:Fire("HealComm_DirectHealStart", sender, healSize, endTime, unpack(targetNames));
             end
@@ -1318,7 +1347,7 @@ end
 
 function lib:UNIT_SPELLCAST_SUCCEEDED(unit, spellName, spellRank, spellCastIndex)
     if (unit ~= 'player') then return end
-    
+
     if (CastInfoIsCasting) then
         CastInfoIsCasting = false;
         commSend("001S");
@@ -1332,7 +1361,7 @@ function lib:UNIT_SPELLCAST_SUCCEEDED(unit, spellName, spellRank, spellCastIndex
         if (LastSpellCastIndex ~= spellCastIndex) then
             -- Instant Cast Spells
         end
-    end    
+    end
 end
 
 function lib:UNIT_SPELLCAST_STOP(unit, spellName, spellRank, spellCastIndex)
@@ -1351,7 +1380,7 @@ end
 function lib:PLAYER_ALIVE()
     -- This event is only fired at initial login, not at reloadui or load-on-demand loading.
     -- The initialisation is triggered again, since none of the initialisation had any effect
-    -- prior to this event firing (no messages sent and InBattlegroundOrArena and InRaidOrParty
+    -- prior to this event firing (no messages sent and InBattlegroundOrArena, InRaid and InParty
     -- are probably not correctly initialised).
     lib:Initialise();
 
@@ -1367,12 +1396,24 @@ function lib:PLAYER_ENTERING_WORLD()
 end
 
 function lib:PARTY_MEMBERS_CHANGED()
-    local wasInRaidOrParty = InRaidOrParty;
-    InRaidOrParty = (GetNumRaidMembers() > 0) or (GetNumPartyMembers() > 0);
+    local wasInRaidOrParty = InRaid or InParty;
+    InRaid = (GetNumRaidMembers() > 0);
+    InParty = (GetNumPartyMembers() > 0);
 
     -- Announce and request version when joining a group
-    if (not wasInRaidOrParty and InRaidOrParty) then
+    if (not wasInRaidOrParty and (InRaid or InParty)) then
         commSend("999" .. tostring(MINOR_VERSION));
+    end
+
+    -- Update Subgroups table
+    twipe(Subgroup);
+    if (InRaid) then
+        for i = 1, GetNumRaidMembers() do
+            local name, _, subgroup = GetRaidRosterInfo(i);
+            if (name and subgroup) then
+                Subgroup[name] = subgroup;
+            end
+        end
     end
 end
 
@@ -1384,7 +1425,8 @@ function lib:Initialise()
     local it = select(2, IsInInstance());
     InBattlegroundOrArena = (it == "pvp") or (it == "arena");
 
-    InRaidOrParty = (GetNumRaidMembers() > 0) or (GetNumPartyMembers() > 0);
+    InRaid = (GetNumRaidMembers() > 0);
+    InParty = (GetNumPartyMembers() > 0);
 
     -- Announce and request version in group and in guild
     commSend("999" .. tostring(MINOR_VERSION));
