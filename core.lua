@@ -124,7 +124,18 @@ local Health_Update = function(self, event, unit, bar, current, max)
 		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
 
-	self.heal:SetPoint("BOTTOM", self, "BOTTOM", 0, height * per)
+	local incHeal = self.incHeal
+	if incHeal > 0 then
+		local size = height * per
+		local incSize = ((self.mod * incHeal) / max) * height
+
+		if incSize + size >= height then
+			incSize = height - size
+		end
+
+		self.heal:SetHeight(incSize)
+		self.heal:SetPoint("BOTTOM", self, "BOTTOM", 0, size)
+	end
 end
 
 local OnEnter = function(self)
@@ -164,7 +175,7 @@ local frame = function(settings, self, unit)
 	hp:SetOrientation("VERTICAL")
 	hp:SetFrameLevel(5)
 	hp:SetStatusBarColor(0, 0, 0)
-	hp:SetAlpha(0.8)
+	hp:SetAlpha(0.9)
 
 	local hpbg = hp:CreateTexture(nil, "BACKGROUND")
 	hpbg:SetAllPoints(hp)
@@ -194,6 +205,7 @@ local frame = function(settings, self, unit)
 	self.Highlight = hl
 
 	local name = hp:CreateFontString(nil, "OVERLAY")
+	name:SetAlpha(1)
 	name:SetPoint("CENTER")
 	name:SetJustifyH("CENTER")
 	name:SetFont(supernova, 10, "THINOUTLINE")
@@ -209,7 +221,8 @@ local frame = function(settings, self, unit)
 	border:SetPoint("RIGHT", self, "RIGHT", 4, 0)
 	border:SetPoint("TOP", self, "TOP", 0, 4)
 	border:SetPoint("BOTTOM", self, "BOTTOM", 0, -4)
-	border:SetTexture([[Interface\AddOns\oUF_Kanne_Grid\media\Normal.tga]])
+	border:SetTexture([[Interface\AddOns\oUF_Grid\media\Normal.tga]])
+	border:SetAlpha(1)
 	border:Hide()
 	border:SetVertexColor(1, 1, 1)
 
@@ -217,6 +230,7 @@ local frame = function(settings, self, unit)
 
 	local icon = hp:CreateTexture(nil, "OVERLAY")
 	icon:SetPoint("CENTER")
+	icon:SetAlpha(1)
 	icon:SetHeight(20)
 	icon:SetWidth(20)
 	icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
@@ -237,6 +251,9 @@ local frame = function(settings, self, unit)
 	self.Range = true
 	self.inRangeAlpha = 1
 	self.outsideRangeAlpha = 0.4
+
+	self.incHeal = 0
+	self.healMod = 0
 
 	return self
 end

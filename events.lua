@@ -6,7 +6,6 @@ if not oUF then
 	return error("oUF_Grid requires oUF")
 end
 
-local units = oUF.units["Kanne-Grid"]
 local libheal = LibStub("LibHealComm-3.0", true)
 
 local UnitName = UnitName
@@ -15,6 +14,7 @@ local select = select
 local unpack = unpack
 local UnitDebuff = UnitDebuff
 local UnitInRaid = UnitInRaid
+local GetTime = GetTime
 
 local f = CreateFrame("Frame")
 f:SetScript("OnEvent", function(self, evnet, ...)
@@ -218,6 +218,30 @@ if libheal then
 		end
 	end
 
+	local mod, incPer, per, incSize, size, max
+	function heals:GetIncSize(unit, name)
+		name = name or invRoster[unit]
+		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime())) or 0
+		incHeal = incHeal + (ownHeals[name] or 0)
+
+		if incHeal > 0 then
+			max = UnitHealthMax(unit)
+			mod = libheal:UnitHealModifierGet(name)
+			incPer = (mod * incHeal) / max
+			per = UnitHealth(unit) / max
+			incSize = incPer * height
+			size = height * per
+
+			if incSize + size >= height then
+				incSize = height - size
+			end
+
+			return incSize, incHeal, mod
+		else
+			return
+		end
+	end
+
 	function heals:UpdateHeals(name)
 		local unit = Roster[name]
 		if not oUF.units[unit] then return end
@@ -235,26 +259,18 @@ if libheal then
 			frame.heal = heal
 		end
 
-		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime())) or 0
-		incHeal = incHeal + (ownHeals[name] or 0)
-
-		if incHeal > 0 then
-			local incPer = (libheal:UnitHealModifierGet(name) * incHeal) / UnitHealthMax(unit)
-			local per = UnitHealth(unit) / UnitHealthMax(unit)
-
-			local incSize = incPer * height
-			local size = height * per
-
-			if incSize + size >= height then
-				incSize = height - size
-			end
-
+		local incSize, incHeal, healMod = self:GetIncSize(unit, name)
+		if incSize then
+			local size = height * (UnitHealth(unit) / UnitHealthMax(unit))
 			frame.heal:SetHeight(incSize)
 			frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, size)
 			frame.heal:Show()
 		else
 			frame.heal:Hide()
 		end
+
+		frame.incHeal = incHeal or 0
+		frame.healMod = healMod or 0
 	end
 
 	libheal.RegisterCallback(heals, "HealComm_DirectHealStop")
@@ -355,7 +371,6 @@ function f:PLAYER_TARGET_CHANGED()
 
 	if not frame then
 		if coloredFrame then
-			print(coloredFrame.unit, coloredFrame.border)
 			if not coloredFrame.Dispell then
 				coloredFrame.border:Hide()
 			end
@@ -372,11 +387,6 @@ function f:PLAYER_TARGET_CHANGED()
 		frame.border:SetVertexColor(1, 1, 1)
 		frame.border:Show()
 		coloredFrame = frame
-	end
-
-	print(frame:GetName())
-	for k, v in pairs(oUF.units) do
-		print(k, v, v:GetName())
 	end
 end
 
