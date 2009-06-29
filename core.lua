@@ -124,10 +124,11 @@ local Health_Update = function(self, event, unit, bar, current, max)
 		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
 
+	-- Hopefully this fixes everything ...
 	local incHeal = self.incHeal
 	if incHeal > 0 then
 		local size = height * per
-		local incSize = ((self.mod * incHeal) / max) * height
+		local incSize = ((self.healMod or 1 * incHeal) / max) * height
 
 		if incSize + size >= height then
 			incSize = height - size
