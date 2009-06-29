@@ -34,7 +34,7 @@ if playerName == "Kanne" then
 end
 
 -- spell = priority
-local debuffs = {
+local debuffs = setmetatable({
 	["Viper Sting"] = 12,
 
 	["Wound Poison"] = 9,
@@ -59,6 +59,14 @@ local debuffs = {
 	["Fear"] = 3,
 	["Psycic Scream"] = 3,
 	["Howl of Terror"] = 3,
+}, { __index = function() return 0 end })
+
+local dispellPriority = {
+	["Magic"] = 4,
+	["Poison"] = 3,
+	["Curse"] = 2,
+	["Disease"] = 1,
+	["None"] = 0,
 }
 
 local dispellClass
@@ -89,17 +97,12 @@ do
 		dispellClass = {}
 		for k, v in pairs(t[playerClass]) do
 			dispellClass[k] = v
+			dispellPriority[k] = dispellPriority[k] * 10
 		end
 		t = nil
 	end
 end
 
-local dispellPiority = {
-	["Magic"] = 4,
-	["Poison"] = 3,
-	["Curse"] = 2,
-	["Disease"] = 1,
-}
 
 -- Lib Heal Support
 
@@ -279,71 +282,51 @@ if libheal then
 	libheal.RegisterCallback(heals, "HealModifierUpdate")
 end
 
-local name, rank, buffTexture, count, duration, timeLeft, dtype, isPlayer
 function f:UNIT_AURA(event, unit)
 	if not oUF.units[unit] then return end
 
 	local frame = oUF.units[unit]
 
 	if not frame.Icon then return end
-	local current, bTexture, dispell, dispellTexture
+
+	local cur, tex, dis
+	local name, rank, buffTexture, count, duration, timeLeft, dtype, isPlayer
 	for i = 1, 40 do
 		name, rank, buffTexture, count, dtype, duration, timeLeft, isPlayer = UnitAura(unit, i, "HARMFUL")
 		if not name then break end
 
-		if dispellClass and dispellClass[dtype] then
-			dispell = dispell or dtype
-			dispellTexture = dispellTexture or buffTexture
-			if dispellPiority[dtype] > dispellPiority[dispell] then
-				dispell = dtype
-				dispellTexture = buffTexture
-			end
-		end
-
-		if debuffs[name] then
-			current = current or name
-			bTexture = bTexture or buffTexture
-
-			if debuffs[name] > debuffs[current] then
-				current = name
-				bTexture = buffTexture
+		if debuffs[name] > debuffs[cur or 1] then
+			if debuffs[name] > 0 then
+				-- Highest priority
+				cur = name
+				tex = buffTexture
+				dis = nil
+			elseif dtype ~= "None" then
+				if dispellPriority[dtype] > dispellPriority[dis or "None"] then
+					cur = name
+					tex = buffTexture
+					dis = dtype
+				end
 			end
 		end
 	end
 
-	if dispellClass then
-		if dispell then
-			if dispellClass[dispell] then
-				local col = DebuffTypeColor[dispell]
-				frame.border:Show()
-				frame.border:SetVertexColor(col.r, col.g, col.b)
-				frame.Dispell = true
-				if not bTexture and dispellTexture then
-					current = dispell
-					bTexture = dispellTexture
-				end
-			end
-		else
-			frame.border:SetVertexColor(1, 1, 1)
-			frame.Dispell = false
-			if coloredFrame then
-				if unit ~= coloredFrame.unit then
-					frame.border:Hide()
-				end
-			else
-				frame.border:Hide()
-			end
+	if dis then
+		local col = DebuffTypeColor[dis]
+		frame.border:SetVertexColor(col.r, col.g, col.b)
+		frame.Dispell = true
+		frame.border:Show()
+	elseif frame.Dispell then
+		if colouredFrame and colouredFrame.unit ~= unit or not colouredFrame then
+			frame.border:Hide()
+			frame.Dispell = False
 		end
 	end
 
-	if current and bTexture or buffTexture  then
-		frame.IconShown = true
-		frame.Icon:SetTexture(bTexture)
+	if cur then
+		frame.Icon:SetTexture(tex)
 		frame.Icon:ShowText()
-		frame.DebuffTexture = true
 	else
-		frame.IconShown = false
-		frame.DebuffTexture = false
 		frame.Icon:HideText()
 	end
 end
