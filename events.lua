@@ -273,7 +273,7 @@ if libheal then
 		end
 
 		frame.incHeal = incHeal or 0
-		frame.healMod = healMod or 0
+		frame.healMod = healMod or 1
 	end
 
 	libheal.RegisterCallback(heals, "HealComm_DirectHealStop")
@@ -295,13 +295,13 @@ function f:UNIT_AURA(event, unit)
 		name, rank, buffTexture, count, dtype, duration, timeLeft, isPlayer = UnitAura(unit, i, "HARMFUL")
 		if not name then break end
 
-		if debuffs[name] > debuffs[cur or 1] then
+		if debuffs[name] > debuffs[cur or 1] or not cur then
 			if debuffs[name] > 0 then
 				-- Highest priority
 				cur = name
 				tex = buffTexture
 				dis = nil
-			elseif dtype ~= "None" then
+			elseif dtype and dtype ~= "None" then
 				if dispellPriority[dtype] > dispellPriority[dis or "None"] then
 					cur = name
 					tex = buffTexture
@@ -317,7 +317,7 @@ function f:UNIT_AURA(event, unit)
 		frame.Dispell = true
 		frame.border:Show()
 	elseif frame.Dispell then
-		if colouredFrame and colouredFrame.unit ~= unit or not colouredFrame then
+		if colouredFrame and colouredFrame ~= colouredFrame or not colouredFrame then
 			frame.border:Hide()
 			frame.Dispell = False
 		end
