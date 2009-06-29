@@ -21,14 +21,17 @@ f:SetScript("OnEvent", function(self, evnet, ...)
 	return self[event](self, event, ...)
 end)
 
-local PLAYERCLASS = select(2, UnitClass("player"))
-local playername, playerrealm = UnitName("player"), GetRealmName()
+local playerClass = select(2, UnitClass("player"))
+local playerName, playerRealm = UnitName("player"), GetRealmName()
 
-local coloredFrame      -- Selected Raid Member
-
+-- Currently selected raid member frame.
+local coloredFrame
 local UpdateRoster
-
 local width, height = 32, 32
+
+if playerName == "Kanne" then
+	playerClass = "PALADIN"
+end
 
 -- spell = priority
 local debuffs = {
@@ -82,9 +85,9 @@ do
 			["Poison"] = true,
 		},
 	}
-	if t[PLAYERCLASS] then
+	if t[playerClass] then
 		dispellClass = {}
-		for k, v in pairs(t[PLAYERCLASS]) do
+		for k, v in pairs(t[playerClass]) do
 			dispellClass[k] = v
 		end
 		t = nil
@@ -94,8 +97,8 @@ end
 local dispellPiority = {
 	["Magic"] = 4,
 	["Poison"] = 3,
-	["Disease"] = 1,
 	["Curse"] = 2,
+	["Disease"] = 1,
 }
 
 -- Lib Heal Support
@@ -107,7 +110,7 @@ if libheal then
 	setmetatable(invRoster, {
 		__index = function(self, key)
 			local name, server = UnitName(key)
-			if name == playername then server = playerrealm end
+			if name == playerName then server = playerRealm end
 			if server and server ~= "" then
 				name = name .. "-" .. server
 			end
@@ -122,14 +125,14 @@ if libheal then
 
 	setmetatable(Roster, {
 		__index = function(self, key)
-			if key == playername then
+			if key == playerName then
 				local unit
 				if UnitInRaid("player") then
 					unit = "raid" .. UnitInRaid("player") + 1
 				else
 					unit = "player"
 				end
-				local set = key .. "-" .. playerrealm
+				local set = key .. "-" .. playerRealm
 				rawset(self, set, unit)
 				rawset(invRoster, unit, set)
 				return unit
@@ -150,12 +153,10 @@ if libheal then
 
 	UpdateRoster = function()
 		local unit
-		local e
 		if GetNumRaidMembers() > 0 then
 			for i = 1, 40 do
 				unit = "raid" .. i
-				e = UnitExists(unit)
-				if e then
+				if UnitExists(unit) then
 					local name, server = UnitName(unit)
 					if server and server ~= "" then
 						name = name .. "-" .. server
@@ -175,8 +176,7 @@ if libheal then
 		elseif GetNumPartyMembers() > 0 then
 			for i = 1, 4 do
 				unit = "party" .. i
-				e = UnitExists(unit)
-				if e then
+				if UnitExists(unit) then
 					local name, server = UnitName(unit)
 					if not Roster[name] then
 						Roster[name] = unit
@@ -208,7 +208,7 @@ if libheal then
 	end
 
 	function heals:HealComm_DirectHealStart(event, healerName, healSize, endTime, ...)
-		local isOwn = healerName == playername
+		local isOwn = healerName == playerName
 		for i = 1, select("#", ...) do
 			local name = select(i, ...)
 			if isOwn then
@@ -288,7 +288,7 @@ function f:UNIT_AURA(event, unit)
 	if not frame.Icon then return end
 	local current, bTexture, dispell, dispellTexture
 	for i = 1, 40 do
-		name, rank, btexture, count, dtype, duration, timeLeft, isPlayer = UnitAura(unit, i, "HARMFUL")
+		name, rank, buffTexture, count, dtype, duration, timeLeft, isPlayer = UnitAura(unit, i, "HARMFUL")
 		if not name then break end
 
 		if dispellClass and dispellClass[dtype] then
@@ -336,7 +336,7 @@ function f:UNIT_AURA(event, unit)
 		end
 	end
 
-	if current and bTexture then
+	if current and bTexture or buffTexture  then
 		frame.IconShown = true
 		frame.Icon:SetTexture(bTexture)
 		frame.Icon:ShowText()
@@ -357,14 +357,18 @@ function f:PLAYER_TARGET_CHANGED()
 		end
 	else
 		local name = UnitName("target")
-		for i = 1, 4 do
-			if UnitExists("party" .. i) then
-				if name == UnitName("party" .. i) then
-					frame = oUF.units["party" .. i]
+		if name == playerName and oUF.units.player then
+			frame = oUF.units.player
+		else
+			for i = 1, 4 do
+				if UnitExists("party" .. i) then
+					if name == UnitName("party" .. i) then
+						frame = oUF.units["party" .. i]
+						break
+					end
+				else
 					break
 				end
-			else
-				break
 			end
 		end
 	end

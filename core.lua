@@ -275,6 +275,8 @@ for i = 1, 8 do
 	if i == 1 then
 		r:SetPoint("LEFT", UIParent, "LEFT", 10, 0)
 		r:SetAttribute("showParty", true)
+		r:SetAttribute("showPlayer", true)
+		r:SetAttribute("showSolo", true)
 	else
 		r:SetPoint("LEFT", raid[i - 1], "RIGHT", 6, 0)
 	end
@@ -316,11 +318,7 @@ end)
 
 function bg:RAID_ROSTER_UPDATE()
 	if not UnitInRaid("player") then
-		if UnitExists("party1") then
-			return self:PARTY_MEMBERS_CHANGED()
-		else
-			return self:Hide()
-		end
+		return self:PARTY_MEMBERS_CHANGED()
 	else
 		self:Show()
 	end
@@ -349,8 +347,6 @@ end
 
 function bg:PARTY_MEMBERS_CHANGED()
 	if UnitInRaid("player") then return end
-
-	if not UnitExists("party" .. 1) then return self:Hide() end
 
 	self:ClearAllPoints()
 	self:SetPoint("BOTTOMRIGHT", _G["oUF_Raid1"], "BOTTOMRIGHT", 8, - 8)
