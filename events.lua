@@ -77,7 +77,7 @@ do
 			["Disease"] = true,
 		},
 		["SHAMAN"] = {
-			["Poision"] = true,
+			["Poison"] = true,
 			["Disease"] = true,
 		},
 		["PALADIN"] = {
@@ -251,15 +251,9 @@ if libheal then
 
 		local frame = oUF.units[unit]
 
-		if not frame.heal then
-			local heal = frame.Health:CreateTexture(nil, "OVERLAY")
-			heal:SetHeight(height)
-			heal:SetWidth(width)
-			heal:SetPoint("BOTTOM", frame.Health)
-			heal:SetTexture([[Interface\AddOns\oUF_Grid\media\gradient32x32.tga]])
-			heal:SetVertexColor(0, 1, 0)
-			heal:Hide()
-			frame.heal = heal
+		local max, current = UnitHealth(unit), UnitHealthMax(unit)
+		if current == max then
+			return frame.heal:Hide()
 		end
 
 		local incSize, incHeal, healMod = self:GetIncSize(unit, name)

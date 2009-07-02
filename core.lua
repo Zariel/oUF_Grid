@@ -127,6 +127,10 @@ local Health_Update = function(self, event, unit, bar, current, max)
 	-- Hopefully this fixes everything ...
 	local incHeal = self.incHeal
 	if incHeal > 0 then
+		if max == current then
+			self.heal:Hide()
+			return
+		end
 		local size = height * per
 		local incSize = ((self.healMod or 1 * incHeal) / max) * height
 
@@ -136,6 +140,7 @@ local Health_Update = function(self, event, unit, bar, current, max)
 
 		self.heal:SetHeight(incSize)
 		self.heal:SetPoint("BOTTOM", self, "BOTTOM", 0, size)
+		self.heal:Show()
 	end
 end
 
