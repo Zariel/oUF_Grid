@@ -294,9 +294,9 @@ function f:UNIT_AURA(event, unit)
 				-- Highest priority
 				cur = name
 				tex = buffTexture
-				dis = nil
+				dis = dtype
 			elseif dtype and dtype ~= "None" then
-				if dispellPriority[dtype] > dispellPriority[dis or "None"] then
+				if not dis or dispellPriority[dtype] > dispellPriority[dis] then
 					cur = name
 					tex = buffTexture
 					dis = dtype
