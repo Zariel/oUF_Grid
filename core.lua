@@ -202,8 +202,8 @@ local frame = function(settings, self, unit)
 	border:SetPoint("BOTTOM", self, "BOTTOM", 0, -4)
 	border:SetTexture([[Interface\AddOns\oUF_Grid\media\Normal.tga]])
 	border:SetAlpha(1)
-	border:Hide()
 	border:SetVertexColor(1, 1, 1)
+	border:Hide()
 
 	self.border = border
 
@@ -215,17 +215,25 @@ local frame = function(settings, self, unit)
 	icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 	icon:Hide()
 
-	icon.ShowText = function(s)
-		self.Name:Hide()
-		s:Show()
+	local show, hide = icon.Show, icon.Hide
+	icon.Show = function(self)
+		show(self)
+		name:Hide()
 	end
 
-	icon.HideText = function(s)
-		self.Name:Show()
-		s:Hide()
+	icon.Hide = function(self)
+		hide(self)
+		name:Show()
 	end
 
 	self.Icon = icon
+
+	local cd = CreateFrame("Cooldown", nil, self)
+	cd:SetAllPoints(icon)
+	cd:SetFrameLevel(6)
+	cd.noCooldownCount = true
+
+	self.cd = cd
 
 	self.Range = true
 	self.inRangeAlpha = 1

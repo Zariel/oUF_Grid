@@ -283,10 +283,10 @@ function f:UNIT_AURA(event, unit)
 
 	if not frame.Icon then return end
 
-	local cur, tex, dis
-	local name, rank, buffTexture, count, duration, timeLeft, dtype, isPlayer
+	local cur, tex, dis, dur, exp
+	local name, rank, buffTexture, count, duration, expire, dtype, isPlayer
 	for i = 1, 40 do
-		name, rank, buffTexture, count, dtype, duration, timeLeft, isPlayer = UnitAura(unit, i, "HARMFUL")
+		name, rank, buffTexture, count, dtype, duration, expire, isPlayer = UnitAura(unit, i, "HARMFUL")
 		if not name then break end
 
 		if debuffs[name] > debuffs[cur or 1] or not cur then
@@ -295,11 +295,15 @@ function f:UNIT_AURA(event, unit)
 				cur = name
 				tex = buffTexture
 				dis = dtype or "none"
+				exp = expire
+				dur = duration
 			elseif dtype and dtype ~= "none" then
 				if not dis or dispellPriority[dtype] > dispellPriority[dis] then
 					cur = name
 					tex = buffTexture
 					dis = dtype
+					exp = expire
+					dur = duration
 				end
 			end
 		end
@@ -317,11 +321,18 @@ function f:UNIT_AURA(event, unit)
 		end
 	end
 
+	if exp and exp > 0 and dur and dur > 0 then
+		frame.cd:SetCooldown(exp - dur, dur)
+		frame.cd:Show()
+	else
+		frame.cd:Hide()
+	end
+
 	if cur then
 		frame.Icon:SetTexture(tex)
-		frame.Icon:ShowText()
+		frame.Icon:Show()
 	else
-		frame.Icon:HideText()
+		frame.Icon:Hide()
 	end
 end
 
