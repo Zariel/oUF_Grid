@@ -63,6 +63,8 @@ end
 local Name_Update = function(self, event, unit)
 	if self.unit ~= unit then return end
 
+	self:Reset()
+
 	local n, s = UnitName(unit)
 	self.name = string.utf8sub(n, 1, 3)
 
@@ -117,6 +119,12 @@ local Health_Update = function(self, event, unit, bar, current, max)
 	end
 end
 
+local reset = function(self)
+	self.border:Hide()
+	self.Icon:Hide()
+	self.Dispell = false
+end
+
 local OnEnter = function(self)
 	UnitFrame_OnEnter(self)
 	self.Highlight:Show()
@@ -141,7 +149,7 @@ local frame = function(settings, self, unit)
 
 	self:SetBackdrop({
 		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", tile = true, tileSize = 16,
-		insets = {left = -2, right = -2, top = -2, bottom = -2},
+		insets = { left = -2, right = -2, top = -2, bottom = -2 },
 	})
 
 	self:SetBackdropColor(0, 0, 0, 1)
@@ -152,7 +160,7 @@ local frame = function(settings, self, unit)
 	hp:SetAllPoints(self)
 	hp:SetStatusBarTexture(texture)
 	hp:SetOrientation("VERTICAL")
-	hp:SetFrameLevel(5)
+	-- hp:SetFrameLevel(5)
 	hp:SetStatusBarColor(0, 0, 0, 0.8)
 	--hp:SetAlpha(0.)
 
@@ -196,10 +204,10 @@ local frame = function(settings, self, unit)
 	self.UNIT_NAME_UPDATE = Name_Update
 
 	local border = hp:CreateTexture(nil, "ARTWORK")
-	border:SetPoint("LEFT", self, "LEFT", -4, 0)
-	border:SetPoint("RIGHT", self, "RIGHT", 4, 0)
-	border:SetPoint("TOP", self, "TOP", 0, 4)
-	border:SetPoint("BOTTOM", self, "BOTTOM", 0, -4)
+	border:SetPoint("LEFT", self, "LEFT", - 3, 0)
+	border:SetPoint("RIGHT", self, "RIGHT", 3, 0)
+	border:SetPoint("TOP", self, "TOP", 0, 3)
+	border:SetPoint("BOTTOM", self, "BOTTOM", 0, - 3)
 	border:SetTexture([[Interface\AddOns\oUF_Grid\media\Normal.tga]])
 	border:SetAlpha(1)
 	border:SetVertexColor(1, 1, 1)
@@ -207,11 +215,11 @@ local frame = function(settings, self, unit)
 
 	self.border = border
 
-	local icon = hp:CreateTexture(nil, "OVERLAY")
+	local icon = hp:CreateTexture(nil, "ARTWORK")
 	icon:SetPoint("CENTER")
 	icon:SetAlpha(1)
-	icon:SetHeight(20)
-	icon:SetWidth(20)
+	icon:SetHeight(16)
+	icon:SetWidth(16)
 	icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 	icon:Hide()
 
@@ -242,6 +250,8 @@ local frame = function(settings, self, unit)
 	self.incHeal = 0
 	self.healMod = 0
 
+	self.Reset = reset
+
 	return self
 end
 
@@ -258,7 +268,7 @@ oUF:SetActiveStyle("Kanne-Grid")
 local raid = {}
 for i = 1, 8 do
 	local r = oUF:Spawn("header", "oUF_Raid" .. i)
-	r:SetPoint("TOP", UIParent, "TOP", 0, -500)
+	r:SetPoint("TOP", UIParent, "TOP", 0, - 500)
 	if i == 1 then
 		-- Change this to move it
 		r:SetPoint("LEFT", UIParent, "LEFT", 10, 0)

@@ -35,7 +35,7 @@ end
 
 -- spell = priority
 local debuffs = setmetatable({
-	["Viper Sting"] = 12,
+	["Viper Sting"] = 7,
 
 	["Wound Poison"] = 9,
 	["Mortal Strike"] = 8,
@@ -46,11 +46,13 @@ local debuffs = setmetatable({
 
 	["Blind"] = 10,
 	["Cyclone"] = 10,
+	["Scatter Shot"] = 10,
 
 	["Polymorph"] = 7,
 
 	["Entangling Roots"] = 7,
 	["Freezing Trap Effect"] = 7,
+	["Chains of Ice"] = 7,
 
 	["Crippling Poison"] = 6,
 	["Hamstring"] = 5,
@@ -64,8 +66,8 @@ local debuffs = setmetatable({
 local dispellPriority = {
 	["Magic"] = 4,
 	["Poison"] = 3,
-	["Curse"] = 2,
 	["Disease"] = 1,
+	["Curse"] = 2,
 	["None"] = 0,
 }
 
@@ -79,6 +81,7 @@ do
 		["SHAMAN"] = {
 			["Poison"] = true,
 			["Disease"] = true,
+			["curse"] = true,
 		},
 		["PALADIN"] = {
 			["Poison"] = true,
@@ -281,7 +284,7 @@ function f:UNIT_AURA(event, unit)
 
 	local frame = oUF.units[unit]
 
-	if not frame.Icon then return end
+	if frame.unit ~= unit then return end
 
 	local cur, tex, dis, dur, exp
 	local name, rank, buffTexture, count, duration, expire, dtype, isPlayer
@@ -289,8 +292,8 @@ function f:UNIT_AURA(event, unit)
 		name, rank, buffTexture, count, dtype, duration, expire, isPlayer = UnitAura(unit, i, "HARMFUL")
 		if not name then break end
 
-		if debuffs[name] > debuffs[cur or 1] or not cur then
-			if debuffs[name] > 0 then
+		if not cur or (debuffs[name] >= debuffs[cur]) then
+			if debuffs[name] > 0 and debuffs[name] > debuffs[cur or 1] then
 				-- Highest priority
 				cur = name
 				tex = buffTexture
@@ -298,7 +301,7 @@ function f:UNIT_AURA(event, unit)
 				exp = expire
 				dur = duration
 			elseif dtype and dtype ~= "none" then
-				if not dis or dispellPriority[dtype] > dispellPriority[dis] then
+				if not dis or (dispellPriority[dtype] > dispellPriority[dis]) then
 					cur = name
 					tex = buffTexture
 					dis = dtype
