@@ -87,7 +87,7 @@ end
 
 -- Events
 local OnEvent = function(self, event, ...)
-	if(not self:IsShown()) then return end
+	if(not self:IsShown()) or not self[event] then return end
 	self[event](self, event, ...)
 end
 
