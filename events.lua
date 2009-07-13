@@ -106,7 +106,6 @@ do
 	end
 end
 
-
 -- Lib Heal Support
 
 if libheal then
@@ -279,12 +278,10 @@ if libheal then
 	libheal.RegisterCallback(heals, "HealModifierUpdate")
 end
 
+local frame
 function f:UNIT_AURA(event, unit)
-	if not oUF.units[unit] then return end
-
-	local frame = oUF.units[unit]
-
-	if frame.unit ~= unit then return end
+	frame = oUF.units[unit]
+	if not frame or frame.unit ~= unit then return end
 
 	local cur, tex, dis, dur, exp
 	local name, rank, buffTexture, count, duration, expire, dtype, isPlayer

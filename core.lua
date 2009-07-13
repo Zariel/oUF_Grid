@@ -63,7 +63,7 @@ end
 local Name_Update = function(self, event, unit)
 	if self.unit ~= unit then return end
 
-	self:Reset()
+	--self:Reset()
 
 	local n, s = UnitName(unit)
 	self.name = string.utf8sub(n, 1, 3)
@@ -203,11 +203,11 @@ local frame = function(settings, self, unit)
 	self.Name = name
 	self.UNIT_NAME_UPDATE = Name_Update
 
-	local border = hp:CreateTexture(nil, "ARTWORK")
-	border:SetPoint("LEFT", self, "LEFT", - 3, 0)
-	border:SetPoint("RIGHT", self, "RIGHT", 3, 0)
-	border:SetPoint("TOP", self, "TOP", 0, 3)
-	border:SetPoint("BOTTOM", self, "BOTTOM", 0, - 3)
+	local border = self:CreateTexture(nil, "ARTWORK")
+	border:SetPoint("LEFT", self, "LEFT", - 5, 0)
+	border:SetPoint("RIGHT", self, "RIGHT", 5, 0)
+	border:SetPoint("TOP", self, "TOP", 0, 5)
+	border:SetPoint("BOTTOM", self, "BOTTOM", 0, - 5)
 	border:SetTexture([[Interface\AddOns\oUF_Grid\media\Normal.tga]])
 	border:SetAlpha(1)
 	border:SetVertexColor(1, 1, 1)
@@ -215,7 +215,7 @@ local frame = function(settings, self, unit)
 
 	self.border = border
 
-	local icon = hp:CreateTexture(nil, "ARTWORK")
+	local icon = hp:CreateTexture(nil, "OVERLAY")
 	icon:SetPoint("CENTER")
 	icon:SetAlpha(1)
 	icon:SetHeight(16)
@@ -238,7 +238,7 @@ local frame = function(settings, self, unit)
 
 	local cd = CreateFrame("Cooldown", nil, self)
 	cd:SetAllPoints(icon)
-	cd:SetFrameLevel(6)
+	cd:SetFrameLevel(7)
 	cd.noCooldownCount = true
 
 	self.cd = cd
@@ -271,18 +271,18 @@ for i = 1, 8 do
 	r:SetPoint("TOP", UIParent, "TOP", 0, - 500)
 	if i == 1 then
 		-- Change this to move it
-		r:SetPoint("LEFT", UIParent, "LEFT", 10, 0)
+		r:SetPoint("LEFT", UIParent, "LEFT", 20, 0)
 		r:SetAttribute("showParty", true)
 		r:SetAttribute("showPlayer", true)
 		r:SetAttribute("showSolo", true)
 	else
-		r:SetPoint("LEFT", raid[i - 1], "RIGHT", 6, 0)
+		r:SetPoint("LEFT", raid[i - 1], "RIGHT", 9, 0)
 	end
 
 	r:SetManyAttributes(
 		"showRaid", true,
 		"groupFilter", i,
-		"yOffset", - 10
+		"yOffset", - 9
 	)
 
 	r:Show()
