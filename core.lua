@@ -144,8 +144,6 @@ local frame = function(settings, self, unit)
 	self:SetScript("OnLeave", OnLeave)
 
 	self:RegisterForClicks("anyup")
-	--self:SetMovable(true)
-	--self:RegisterForDrag("LleftButton")
 
 	self:SetBackdrop({
 		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", tile = true, tileSize = 16,
@@ -161,7 +159,7 @@ local frame = function(settings, self, unit)
 	hp:SetStatusBarTexture(texture)
 	hp:SetOrientation("VERTICAL")
 	-- hp:SetFrameLevel(5)
-	hp:SetStatusBarColor(0, 0, 0, 0.8)
+	hp:SetStatusBarColor(0, 0, 0, 0.75)
 	--hp:SetAlpha(0.)
 
 	local hpbg = hp:CreateTexture(nil, "BACKGROUND")
