@@ -1,5 +1,5 @@
 local MAJOR_VERSION = "LibHealComm-3.0";
-local MINOR_VERSION = 90000 + tonumber(("$Revision: 56 $"):match("%d+"));
+local MINOR_VERSION = 90000 + tonumber(("$Revision: 73 $"):match("%d+"));
 
 local lib = LibStub:NewLibrary(MAJOR_VERSION, MINOR_VERSION);
 if not lib then return end
@@ -51,16 +51,19 @@ end
 -- Scanning Tooltip --
 ----------------------
 
+-- Create tooltip frame if it does not exist
 if (not lib.Tooltip) then
     lib.Tooltip = CreateFrame("GameTooltip");
     lib.Tooltip:SetOwner(UIParent, "ANCHOR_NONE");
-    for i = 1, 4 do
+end
+-- Create tooltip lines if they do not exist
+for i = 1, 5 do
+    if (not lib["TooltipTextLeft" .. i]) then
         lib["TooltipTextLeft" .. i] = lib.Tooltip:CreateFontString();
         lib["TooltipTextRight" .. i] = lib.Tooltip:CreateFontString();
         lib.Tooltip:AddFontStrings(lib["TooltipTextLeft" .. i], lib["TooltipTextRight" .. i]);
     end
 end
-
 
 -------------------------------
 -- Embed CallbackHandler-1.0 --
@@ -210,7 +213,7 @@ local function getBaseHealSize(name)
             lib.Tooltip:SetSpell(i, BOOKTYPE_SPELL);
 
             -- Determine healing
-            local HealMin, HealMax = select(3, string.find(lib.TooltipTextLeft4:GetText() or lib.TooltipTextLeft3:GetText() or "", "(%d+) ?[\195\160tobisa到~\-]+ ?(%d+)"));
+            local HealMin, HealMax = select(3, string.find(lib.TooltipTextLeft5:GetText() or lib.TooltipTextLeft4:GetText() or lib.TooltipTextLeft3:GetText() or "", "(%d+) ?[\195\160tobisa到~\-]+ ?(%d+)"));
             HealMin, HealMax = tonumber(HealMin) or 0, tonumber(HealMax) or 0;
             local Heal = (HealMin + HealMax) / 2;
 
@@ -273,6 +276,7 @@ local healingBuffs =
     [GetSpellInfo(45234)] = function (count, rank) return (1.0 + (0.04 + 0.03 * (rank - 1)) * count) end, -- Focused Will
     [GetSpellInfo(34123)] = 1.06, -- Tree of Life
     [GetSpellInfo(58549)] = function (count, rank, texture) return ((texture == "Interface\\Icons\\Ability_Warrior_StrengthOfArms") and (1.18 ^ count) or 1.0) end, -- Tenacity (Wintergrasp)
+    [GetSpellInfo(64844)] = function (count, rank, texture) return rank and 1.0 or 1.10 end, -- Divine Hymn
 }
 
 local healingDebuffs =
@@ -725,11 +729,16 @@ if (playerClass == "DRUID") then
             nBonus = bonus * 1.88 * (2.0 / 3.5) * 0.5;
         elseif (name == tNourish) then
             local idolBonus = idolsNourish[getEquippedRelicID()] or 0;
+
+            -- Empowered Touch Talent (increases bonus healing effects by 10% per rank)
+            local talentEmpoweredTouch = 10 * select(5, GetTalentInfo(3, 15)) / 100;
+
             -- Nourish heals for 20% more if player's HoT is on the target.
             if (detectBuff(target, tRejuvenation, true) or detectBuff(target, tRegrowth, true) or detectBuff(target, tLifebloom, true) or detectBuff(target, tWildGrowth, true)) then
                 effectiveHealModifier = effectiveHealModifier * 1.2
             end
-            nBonus = (bonus + idolBonus) * 1.88 * (1.5 / 3.5);
+
+            nBonus = (bonus + idolBonus) * (1.88 * (1.5 / 3.5) + talentEmpoweredTouch);
         end
 
         effectiveHeal = effectiveHealModifier * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
@@ -934,16 +943,16 @@ if (playerClass == "PRIEST") then
         elseif (name == tHeal) then
             nBonus = bonus * 1.88 * (3.0 / 3.5);
         elseif (name == tGreaterHeal) then
-            local empoweredHealing = 8 * select(5, GetTalentInfo(2, 20)) / 100;
+            local empoweredHealing = 8 * select(5, GetTalentInfo(2, 21)) / 100;
             nBonus = bonus * (1.88 * (3.0 / 3.5) + empoweredHealing);
         elseif (name == tFlashHeal) then
-            local empoweredHealing = 4 * select(5, GetTalentInfo(2, 20)) / 100;
+            local empoweredHealing = 4 * select(5, GetTalentInfo(2, 21)) / 100;
             nBonus = bonus * (1.88 * (1.5 / 3.5) + empoweredHealing);
         elseif (name == tBindingHeal) then
-            local empoweredHealing = 4 * select(5, GetTalentInfo(2, 20)) / 100;
+            local empoweredHealing = 4 * select(5, GetTalentInfo(2, 21)) / 100;
             nBonus = bonus * (1.88 * (1.5 / 3.5) + empoweredHealing);
         elseif (name == tPrayerOfHealing) then
-            nBonus = bonus * 1.88 * (3.0 / 3.5) * 0.5;
+            nBonus = bonus * 1.88 * (3.0 / 3.5) * 0.326;
         end
 
         effectiveHeal = effectiveHealModifier * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));
@@ -965,6 +974,7 @@ if (playerClass == "SHAMAN") then
     local tTidalWaves = GetSpellInfo(51562);
     local tRiptide = GetSpellInfo(61295);
     local tEarthShield = GetSpellInfo(974);
+    local tTidalForce = GetSpellInfo(55198);
 
 --[[HotSpells =
     {
@@ -1036,19 +1046,31 @@ if (playerClass == "SHAMAN") then
         local bonus = GetSpellBonusHealing();
 
         -- Purification Talent (increases healing by 2% per rank).
-        -- This is factored into effectiveHealModifier in the individual spell section below due to interaction with Improved Chain Heal.
-        local talentPurification = 2 * select(5, GetTalentInfo(3, 15)) / 100 + 1;
+        effectiveHealModifier = effectiveHealModifier * (2 * select(5, GetTalentInfo(3, 15)) / 100 + 1);
+
+        -- Shaman healing spells belong to the Nature school ("4").
+        local critChance = GetSpellCritChance(4);
+
+        -- Tidal Mastery Talent (increases critical effect chance of heals by 1% per rank)
+        critChance = critChance + select(5, GetTalentInfo(3, 11));
 
         local spellTab = HealingSpells[name];
 
         -- Process individual spells
         if (name == tLesserHealingWave) then
             local totemBonus = totemsLesserHealingWave[getEquippedRelicID()] or 0;
-            effectiveHealModifier = effectiveHealModifier * talentPurification;
 
             -- Glyph of Lesser Healing Wave (increases effective healing by 20% if player's Earth Shield is on target)
             if (detectGlyph(55438) and detectBuff(target, tEarthShield, true)) then
                 effectiveHealModifier = effectiveHealModifier * 1.2;
+            end
+
+            -- Tidal Force Buff (self-buff that increases critical effect chance by 20% per stack)
+            critChance = critChance + 20 * (detectBuff('player', tTidalForce) or 0);
+
+            -- Tidal Waves Buff (self-buff that increases critical effect chance by 25%)
+            if (detectBuff('player', tTidalWaves)) then
+                critChance = critChance + 25;
             end
 
             -- Tidal Waves Talent (increases bonus healing effects by 2% per rank)
@@ -1057,12 +1079,20 @@ if (playerClass == "SHAMAN") then
             nBonus = (bonus + totemBonus) * (1.88 * (1.5 / 3.5) + talentTidalWaves);
         elseif (name == tHealingWave) then
             local totemBonus = totemsHealingWave[getEquippedRelicID()] or 0;
-            effectiveHealModifier = effectiveHealModifier * talentPurification;
 
-            -- Healing Way Buff (target buff that increases effective healing by 18%)
-            if (detectBuff(target, tHealingWay)) then
-                effectiveHealModifier = effectiveHealModifier * 1.18;
-            end;
+            -- Healing Way Talent (increases healing by 8/16/25%)
+            local talentHealingWay = 0;
+            do
+                local t = select(5, GetTalentInfo(3, 12));
+                if     (t == 1) then talentHealingWay = 0.08;
+                elseif (t == 2) then talentHealingWay = 0.16;
+                elseif (t == 3) then talentHealingWay = 0.25;
+                end
+            end
+            effectiveHealModifier = effectiveHealModifier * (1.0 + talentHealingWay);
+
+            -- Tidal Force Buff (self-buff that increases critical effect chance by 20% per stack)
+            critChance = critChance + 20 * (detectBuff('player', tTidalForce) or 0);
 
             -- Tidal Waves Talent (increases bonus healing effects by 4% per rank)
             local talentTidalWaves = 4 * select(5, GetTalentInfo(3, 25)) / 100;
@@ -1078,16 +1108,22 @@ if (playerClass == "SHAMAN") then
             baseHealSize = baseHealSize + totemBonus;
 
             -- Improved Chain Heal Talent (increases healing by 10% per rank)
-            local talentImprovedChainHeal = 10 * select(5, GetTalentInfo(3, 20)) / 100;
-
-            effectiveHealModifier = effectiveHealModifier * (talentPurification + talentImprovedChainHeal);
+            effectiveHealModifier = effectiveHealModifier * (10 * select(5, GetTalentInfo(3, 20)) / 100 + 1);
 
             -- Riptide Buff (target buff that increases effective healing by 25%)
             if (detectBuff(target, tRiptide, true)) then
                 effectiveHealModifier = effectiveHealModifier * 1.25;
             end
 
+            -- Tidal Force Buff (self-buff that increases critical heal chance by 20% per stack)
+            critChance = critChance + 20 * (detectBuff('player', tTidalForce) or 0);
+
             nBonus = bonus * 1.88 * (2.5 / 3.5);
+        end
+
+        -- If our critical effect chance is over 100%, then we're guaranteed a critical heal effect.
+        if (critChance >= 100) then
+            effectiveHealModifier = effectiveHealModifier * 1.5;
         end
 
         effectiveHeal = effectiveHealModifier * (baseHealSize + nBonus * getDownrankingFactor(spellTab.Level[rank], UnitLevel('player')));

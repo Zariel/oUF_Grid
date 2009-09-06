@@ -263,19 +263,32 @@ local style = setmetatable({
 oUF:RegisterStyle("Kanne-Grid", style)
 oUF:SetActiveStyle("Kanne-Grid")
 
+local f = CreateFrame("Frame", "oUF_Grid", UIParent)
+f:SetHeight(20)
+f:SetWidth(20)
+f:SetPoint("CENTER")
+f:SetMovable(true)
+f:SetUserPlaced(true)
+
 local raid = {}
 for i = 1, 8 do
 	local r = oUF:Spawn("header", "oUF_Raid" .. i)
-	r:SetPoint("TOP", UIParent, "TOP", 0, - 500)
+
+	r:SetParent(f)
+
+	r:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
+
 	if i == 1 then
 		-- Change this to move it
-		r:SetPoint("LEFT", UIParent, "LEFT", 20, 0)
+		r:SetPoint("TOPLEFT", f, "TOPLEFT", 20, 0)
 		r:SetAttribute("showParty", true)
 		r:SetAttribute("showPlayer", true)
 		r:SetAttribute("showSolo", true)
 	else
-		r:SetPoint("LEFT", raid[i - 1], "RIGHT", 9, 0)
+		r:SetPoint("TOPLEFT", raid[i - 1], "TOPRIGHT", 9, 0)
 	end
+
+	r:SetMovable(true)
 
 	r:SetManyAttributes(
 		"showRaid", true,
@@ -298,7 +311,7 @@ local SubGroups = function()
 end
 
 -- BG
-local bg = CreateFrame("Frame")
+local bg = CreateFrame("Frame", nil, f)
 bg:SetBackdrop({
 	bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = true, tileSize = 16,
 	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
@@ -307,6 +320,19 @@ bg:SetBackdrop({
 bg:SetBackdropColor(0, 0, 0, 0.6)
 bg:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
 bg:SetFrameLevel(0)
+bg:SetMovable(true)
+bg:EnableMouse(true)
+
+bg:SetScript("OnMouseUp", function(self, button)
+	f:StopMovingOrSizing()
+end)
+
+bg:SetScript("OnMouseDown", function(self, button)
+	if button == "LeftButton" and IsModifiedClick("ALT") then
+		f:ClearAllPoints()
+		f:StartMoving()
+	end
+end)
 
 bg:SetScript("OnEvent", function(self, event, ...)
 	return self[event](self, event, ...)

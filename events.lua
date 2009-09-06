@@ -110,6 +110,7 @@ end
 
 if libheal then
 	local ownHeals = {}
+	local heals = {}
 	local Roster, invRoster = {}, {}
 
 	setmetatable(invRoster, {
@@ -195,10 +196,12 @@ if libheal then
 					invRoster[unit] = nil
 				end
 			end
+		else
+			for k, v in pairs(heals) do
+				heals[k] = nil
+			end
 		end
 	end
-
-	local heals = {}
 
 	function heals:HealComm_DirectHealStop(event, healerName, healSize, succeeded, ...)
 		self:HealComm_DirectHealStart(event, healerName, 0, endTime, ...)
