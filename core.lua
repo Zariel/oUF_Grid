@@ -116,6 +116,8 @@ local Health_Update = function(self, event, unit, bar, current, max)
 		self.heal:SetHeight(incSize)
 		self.heal:SetPoint("BOTTOM", self, "BOTTOM", 0, size)
 		self.heal:Show()
+	else
+		self.heal:Hide()
 	end
 end
 
@@ -279,7 +281,8 @@ for i = 1, 8 do
 	r:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
 
 	if i == 1 then
-		-- Change this to move it
+		-- As Haste would say;
+		-- ZA WARUDO !!!
 		r:SetPoint("TOPLEFT", f, "TOPLEFT", 20, 0)
 		r:SetAttribute("showParty", true)
 		r:SetAttribute("showPlayer", true)
@@ -322,6 +325,7 @@ bg:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
 bg:SetFrameLevel(0)
 bg:SetMovable(true)
 bg:EnableMouse(true)
+bg:SetClampedToScreen(true)
 
 bg:SetScript("OnMouseUp", function(self, button)
 	f:StopMovingOrSizing()
