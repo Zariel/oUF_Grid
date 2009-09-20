@@ -6,7 +6,7 @@ if not oUF then
 	return error("oUF_Grid requires oUF")
 end
 
-local libheal = LibStub("LibHealComm-3.0", true)
+local libheal = LibStub("LibHealComm-4.0", true)
 
 local UnitName = UnitName
 local UnitClass = UnitClass
@@ -23,6 +23,7 @@ end)
 
 local playerClass = select(2, UnitClass("player"))
 local playerName, playerRealm = UnitName("player"), GetRealmName()
+local playerGUID = UnitGUID("player")
 
 -- Currently selected raid member frame.
 local coloredFrame
@@ -109,132 +110,36 @@ end
 -- Lib Heal Support
 
 if libheal then
-	local ownHeals = {}
 	local heals = {}
-	local Roster, invRoster = {}, {}
+	local roster = libheal:GetGuidUnitMapTable()
 
-	setmetatable(invRoster, {
-		__index = function(self, key)
-			local name, server = UnitName(key)
-			if name == playerName then server = playerRealm end
-			if server and server ~= "" then
-				name = name .. "-" .. server
-			end
-			if name then
-				rawset(Roster, name, key)
-				rawset(self, key, name)
-				return name
-			end
-			return
-		end
-	})
-
-	setmetatable(Roster, {
-		__index = function(self, key)
-			if key == playerName then
-				local unit
-				if UnitInRaid("player") then
-					unit = "raid" .. UnitInRaid("player") + 1
-				else
-					unit = "player"
-				end
-				local set = key .. "-" .. playerRealm
-				rawset(self, set, unit)
-				rawset(invRoster, unit, set)
-				return unit
-			end
-			-- Dont want to do this :(
-			for unit in pairs(oUF.units) do
-				local name, server = UnitName(unit)
-				if name == key and server and server ~= "" then
-					name = name .. "-" .. server
-					rawset(self, name, unit)
-					rawset(invRoster, unit, name)
-					return unit
-				end
-			end
-			return
-		end
-	})
-
-	UpdateRoster = function()
-		local unit
-		if GetNumRaidMembers() > 0 then
-			for i = 1, 40 do
-				unit = "raid" .. i
-				if UnitExists(unit) then
-					local name, server = UnitName(unit)
-					if server and server ~= "" then
-						name = name .. "-" .. server
-					end
-					if name then
-						Roster[name] = unit
-						invRoster[unit] = name
-					end
-				else
-					local n = invRoster[unit]
-					if n then
-						Roster[n] = nil
-					end
-					invRoster[unit] = nil
-				end
-			end
-		elseif GetNumPartyMembers() > 0 then
-			for i = 1, 4 do
-				unit = "party" .. i
-				if UnitExists(unit) then
-					local name, server = UnitName(unit)
-					if not Roster[name] then
-						Roster[name] = unit
-						invRoster[unit] = name
-					end
-				else
-					local n = invRoster[unit]
-					if n then
-						Roster[n] = nil
-					end
-					invRoster[unit] = nil
-				end
-			end
-		else
-			for k, v in pairs(heals) do
-				heals[k] = nil
-			end
-		end
+	function heals:HealComm_HealStopped(event, casterGUID, spellID, type, interuptted, ...)
+		self:HealComm_DirectHealStart(nil, nil, nil, nil, nil, ...)
 	end
 
-	function heals:HealComm_DirectHealStop(event, healerName, healSize, succeeded, ...)
-		self:HealComm_DirectHealStart(event, healerName, 0, endTime, ...)
+	function heals:HealComm_ModifierChanged(event, guid)
+		self:UpdateHeals(nil, nil, nil, nil, nil, guid)
 	end
 
-	function heals:HealModifierUpdate(event, unit, targetName, healModifier)
-		self:UpdateHeals(targetName)
-	end
-
-	function heals:HealComm_DirectHealDelayed(event, healerName, healSize, endTime, ...)
+	function heals:HealComm_HealDelayed(event, healerName, healSize, endTime, ...)
 		self:HealComm_DirectHealStart(event, healerName, healSize, endTime, ...)
 	end
 
-	function heals:HealComm_DirectHealStart(event, healerName, healSize, endTime, ...)
-		local isOwn = healerName == playerName
+	heals.HealComm_HealUpdated = heals.HealComm_HealDelayed
+
+	function heals:HealComm_HealStarted(event, healerGUID, spellID, healType, endTime, ...)
 		for i = 1, select("#", ...) do
-			local name = select(i, ...)
-			if isOwn then
-				ownHeals[name] = healSize
-			end
-			self:UpdateHeals(name)
+			self:UpdateHeals(select(i, ...))
 		end
 	end
 
 	local mod, incPer, per, incSize, size, max
-	function heals:GetIncSize(unit, name)
-		name = name or invRoster[unit]
-		local incHeal = select(2, libheal:UnitIncomingHealGet(unit, GetTime())) or 0
-		incHeal = incHeal + (ownHeals[name] or 0)
+	function heals:GetIncSize(guid, unit)
+		local incHeal = libheal:GetHealAmount(guid, libheal.ALL_HEALS)
 
-		if incHeal > 0 then
+		if incHeal then
 			max = UnitHealthMax(unit)
-			mod = libheal:UnitHealModifierGet(name)
+			mod = libheal:GetHealModifierGet(guid)
 			incPer = (mod * incHeal) / max
 			per = UnitHealth(unit) / max
 			incSize = incPer * height
@@ -250,8 +155,8 @@ if libheal then
 		end
 	end
 
-	function heals:UpdateHeals(name)
-		local unit = Roster[name]
+	function heals:UpdateHeals(guid)
+		local unit = roster[guid]
 		if not oUF.units[unit] then return end
 
 		local frame = oUF.units[unit]
@@ -275,10 +180,11 @@ if libheal then
 		frame.healMod = healMod or 1
 	end
 
-	libheal.RegisterCallback(heals, "HealComm_DirectHealStop")
-	libheal.RegisterCallback(heals, "HealComm_DirectHealDelayed")
-	libheal.RegisterCallback(heals, "HealComm_DirectHealStart")
-	libheal.RegisterCallback(heals, "HealModifierUpdate")
+	libheal.RegisterCallback(heals, "HealComm_HealStopped")
+	libheal.RegisterCallback(heals, "HealComm_HealDelayed")
+	libheal.RegisterCallback(heals, "HealComm_HealUpdated")
+	libheal.RegisterCallback(heals, "HealComm_HealStarted")
+	libheal.RegisterCallback(heals, "HealComm_ModifierChanged")
 end
 
 local frame
@@ -385,18 +291,5 @@ function f:PLAYER_TARGET_CHANGED()
 	end
 end
 
-function f:RAID_ROSTER_UPDATE(event)
-	if libheal then
-		UpdateRoster()
-	else
-		self:UnregisterEvent(event)
-	end
-end
-
-f.PLAYER_LOGIN = f.RAID_ROSTER_UPDATE
-f.PARTY_MEMBERS_CHANGED = f.RAID_ROSTER_UPDATE
 f:RegisterEvent("UNIT_AURA")
 f:RegisterEvent("PLAYER_TARGET_CHANGED")
-f:RegisterEvent("RAID_ROSTER_UPDATE")
-f:RegisterEvent("PLAYER_LOGIN")
-f:RegisterEvent("PARTY_MEMBERS_CHANGED")

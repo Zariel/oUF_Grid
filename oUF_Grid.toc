@@ -2,12 +2,13 @@
 ## Author: Zariel
 ## Title: oUF_Grid
 ## Version: 3.0.3-19
-## OptionalDeps: oUF, LibHealComm-3.0, UTF8
+## OptionalDeps: oUF, LibHealComm-4.0, UTF8, CallbackHandler-1.0
 ## X-oUF: oufgrid
 
 lib\UTF8\utf8data.lua
 lib\UTF8\utf8.lua
-lib\LibHealComm-3.0\lib.xml
+lib\CallbackHandler-1.0\CallbackHandler-1.0.xml
+lib\LibHealComm-4.0\LibHealComm-4.0.xml
 
 oUF\oUF.xml
 
