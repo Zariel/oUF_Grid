@@ -114,7 +114,7 @@ if libheal then
 	local roster = libheal:GetGuidUnitMapTable()
 
 	function heals:HealComm_HealStopped(event, casterGUID, spellID, type, interuptted, ...)
-		self:HealComm_DirectHealStart(nil, nil, nil, nil, nil, ...)
+		self:HealComm_HealStarted(nil, nil, nil, nil, nil, ...)
 	end
 
 	function heals:HealComm_ModifierChanged(event, guid)
@@ -122,7 +122,7 @@ if libheal then
 	end
 
 	function heals:HealComm_HealDelayed(event, healerName, healSize, endTime, ...)
-		self:HealComm_DirectHealStart(event, healerName, healSize, endTime, ...)
+		self:HealComm_HealStarted(event, healerName, healSize, endTime, ...)
 	end
 
 	heals.HealComm_HealUpdated = heals.HealComm_HealDelayed
@@ -139,7 +139,7 @@ if libheal then
 
 		if incHeal then
 			max = UnitHealthMax(unit)
-			mod = libheal:GetHealModifierGet(guid)
+			mod = libheal:GetHealModifier(guid)
 			incPer = (mod * incHeal) / max
 			per = UnitHealth(unit) / max
 			incSize = incPer * height
@@ -166,7 +166,7 @@ if libheal then
 			return frame.heal:Hide()
 		end
 
-		local incSize, incHeal, healMod = self:GetIncSize(unit, name)
+		local incSize, incHeal, healMod = self:GetIncSize(guid, unit)
 		if incSize then
 			local size = height * (UnitHealth(unit) / UnitHealthMax(unit))
 			frame.heal:SetHeight(incSize)
