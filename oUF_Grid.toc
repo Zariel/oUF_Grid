@@ -9,6 +9,7 @@ lib\UTF8\utf8data.lua
 lib\UTF8\utf8.lua
 lib\CallbackHandler-1.0\CallbackHandler-1.0.xml
 lib\LibHealComm-4.0\LibHealComm-4.0.xml
+lib\LibWrapperHealComm-1.0\LibWrapperHealComm-1.0.xml
 
 oUF\oUF.xml
 

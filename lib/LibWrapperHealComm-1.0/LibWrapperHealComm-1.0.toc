@@ -1,0 +1,11 @@
+## Interface: 30200
+## Title: Lib: HealComm Wrapper - 1.0
+## Notes: Wrapper to convert HealComm data from 3.0 to 4.0
+## Author: xbeeps (3.0), Shadowed (4.0)
+## X-Category: Library
+
+#@no-lib-strip@
+libs\LibStub\LibStub.lua
+#@end-no-lib-strip@
+
+LibWrapperHealComm-1.0.xml
