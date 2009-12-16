@@ -111,7 +111,7 @@ end
 
 if libheal then
 	local heals = {}
-	local roster = libheal:GetGuidUnitMapTable()
+	local roster = libheal:GetGUIDUnitMapTable()
 
 	function heals:HealComm_HealStopped(event, casterGUID, spellID, type, interuptted, ...)
 		self:HealComm_HealStarted(nil, nil, nil, nil, nil, ...)
