@@ -69,11 +69,9 @@ local Name_Update = function(self, event, unit)
 	self.name = string.utf8sub(n, 1, 3)
 
 	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
-		self.Health:SetStatusBarColor(0.3, 0.3, 0.3)
+		self.Health.bg:SetVertexColor(0.3, 0.3, 0.3)
 	else
-		local r, g, b = GetClassColor(unit)
-		self.Health:SetStatusBarColor(r, g, b)
-		self.Health.bg:SetVertexColor(r * 0.3, g * 0.3, b * 0.3)
+		self.Health.bg:SetVertexColor(GetClassColor(unit))
 	end
 end
 
@@ -82,9 +80,6 @@ local round = function(x, y)
 end
 
 local Health_Update = function(self, event, unit, bar, current, max)
-	if not self.unit then self.unit = unit end
-	if unit ~= self.unit then return end
-
 	local def = max - current
 	bar:SetValue(current)
 
@@ -99,11 +94,9 @@ local Health_Update = function(self, event, unit, bar, current, max)
 	end
 
 	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
-		bar:SetStatusBarColor(0.3, 0.3, 0.3)
+		bar.bg:SetVertexColor(0.3, 0.3, 0.3)
 	else
-		local r, g, b = GetClassColor(unit)
-		bar:SetStatusBarColor(r, g, b)
-		bar.bg:SetVertexColor(r * 0.3, g * 0.3, b * 0.3)
+		bar.bg:SetVertexColor(GetClassColor(unit))
 	end
 
 	-- Hopefully this fixes everything ...
@@ -168,6 +161,7 @@ local frame = function(settings, self, unit)
 	hp:SetStatusBarTexture(texture)
 	hp:SetOrientation("VERTICAL")
 	-- hp:SetFrameLevel(5)
+	hp:SetStatusBarColor(0, 0, 0, 0.75)
 	--hp:SetAlpha(0.)
 
 	local hpbg = hp:CreateTexture(nil, "BACKGROUND")
