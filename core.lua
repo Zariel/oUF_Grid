@@ -100,12 +100,14 @@ local Health_Update = function(self, event, unit, bar, current, max)
 	end
 
 	-- Hopefully this fixes everything ...
+	--[[
 	local incHeal = self.incHeal
 	if incHeal > 0 then
 		if max == current then
 			self.heal:Hide()
 			return
 		end
+
 		local size = height * per
 		local incSize = ((self.healMod or 1 * incHeal) / max) * height
 
@@ -118,7 +120,7 @@ local Health_Update = function(self, event, unit, bar, current, max)
 		self.heal:Show()
 	else
 		self.heal:Hide()
-	end
+	end]]
 end
 
 local reset = function(self)
@@ -172,7 +174,7 @@ local frame = function(settings, self, unit)
 	local heal = hp:CreateTexture(nil, "OVERLAY")
 	heal:SetHeight(height)
 	heal:SetWidth(width)
-	heal:SetPoint("BOTTOM")
+	heal:SetAllPoints(self)
 	heal:SetTexture(texture)
 	heal:SetVertexColor(0, 1, 0)
 	heal:Hide()
@@ -191,7 +193,7 @@ local frame = function(settings, self, unit)
 
 	self.Highlight = hl
 
-	local name = hp:CreateFontString(nil, "OVERLAY")
+	local name = hp:CreateFontString(nil, "ARTWORK")
 	name:SetAlpha(1)
 	name:SetPoint("CENTER")
 	name:SetJustifyH("CENTER")
