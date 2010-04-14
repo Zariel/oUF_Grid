@@ -100,7 +100,6 @@ local Health_Update = function(self, event, unit, bar, current, max)
 	end
 
 	-- Hopefully this fixes everything ...
-	--[[
 	local incHeal = self.incHeal
 	if incHeal > 0 then
 		if max == current then
@@ -120,7 +119,7 @@ local Health_Update = function(self, event, unit, bar, current, max)
 		self.heal:Show()
 	else
 		self.heal:Hide()
-	end]]
+	end
 end
 
 local reset = function(self)
