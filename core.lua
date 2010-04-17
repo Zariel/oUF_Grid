@@ -100,25 +100,8 @@ local Health_Update = function(self, event, unit, bar, current, max)
 	end
 
 	-- Hopefully this fixes everything ...
-	local incHeal = self.incHeal
-	if incHeal > 0 then
-		if max == current then
-			self.heal:Hide()
-			return
-		end
-
-		local size = height * per
-		local incSize = ((self.healMod or 1 * incHeal) / max) * height
-
-		if incSize + size >= height then
-			incSize = height - size
-		end
-
-		self.heal:SetHeight(incSize)
-		self.heal:SetPoint("BOTTOM", self, "BOTTOM", 0, size)
-		self.heal:Show()
-	else
-		self.heal:Hide()
+	if self.UpdateHeals then
+		self:UpdateHeals(UnitGUID(self.unit))
 	end
 end
 
@@ -171,9 +154,10 @@ local frame = function(settings, self, unit)
 	hpbg:SetAlpha(1)
 
 	local heal = hp:CreateTexture(nil, "OVERLAY")
-	heal:SetHeight(height)
 	heal:SetWidth(width)
-	heal:SetAllPoints(self)
+	heal:SetPoint("BOTTOM", self, "BOTTOM")
+	heal:SetPoint("LEFT", self, "LEFT")
+	heal:SetPoint("RIGHT", self, "RIGHT")
 	heal:SetTexture(texture)
 	heal:SetVertexColor(0, 1, 0)
 	heal:Hide()

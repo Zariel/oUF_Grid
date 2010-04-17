@@ -166,11 +166,13 @@ if libheal then
 			return frame.heal:Hide()
 		end
 
-		local incSize, incHeal, healMod = self:GetIncSize(guid, unit)
+		local incSize, incHeal, healMod = heals:GetIncSize(guid, unit)
 		if incSize then
 			local size = height * (UnitHealth(unit) / UnitHealthMax(unit))
 			frame.heal:SetHeight(incSize)
 			frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, size)
+			frame.heal:SetPoint("LEFT", frame, "LEFT")
+			frame.heal:SetPoint("RIGHT", frame, "RIGHT")
 			frame.heal:Show()
 		else
 			frame.heal:Hide()
@@ -179,6 +181,8 @@ if libheal then
 		frame.incHeal = incHeal or 0
 		frame.healMod = healMod or 1
 	end
+
+	oUF.UpdateHeals = heals.UpdateHeals
 
 	libheal.RegisterCallback(heals, "HealComm_HealStopped")
 	libheal.RegisterCallback(heals, "HealComm_HealDelayed")
