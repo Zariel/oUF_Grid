@@ -12,7 +12,8 @@ local unpack = unpack
 local UnitDebuff = UnitDebuff
 local UnitInRaid = UnitInRaid
 
-local width, height = 32, 32
+local size = 32
+oUF.size = size
 
 local supernova = [[Interface\AddOns\oUF_Grid\media\nokiafc22.ttf]]
 local texture = [[Interface\AddOns\oUF_Grid\media\gradient32x32.tga]]
@@ -153,8 +154,8 @@ local frame = function(settings, self, unit)
 	hpbg:SetTexture(texture)
 	hpbg:SetAlpha(1)
 
-	local heal = hp:CreateTexture(nil, "OVERLAY")
-	heal:SetWidth(width)
+	local heal = hp:CreateTexture(nil, "BORDER")
+	heal:SetWidth(size)
 	heal:SetPoint("BOTTOM", self, "BOTTOM")
 	heal:SetPoint("LEFT", self, "LEFT")
 	heal:SetPoint("RIGHT", self, "RIGHT")
@@ -241,8 +242,8 @@ local frame = function(settings, self, unit)
 end
 
 local style = setmetatable({
-	["initial-height"] = height,
-	["initial-width"] = width,
+	["initial-height"] = size,
+	["initial-width"] = size,
 }, {
 	__call = frame,
 })

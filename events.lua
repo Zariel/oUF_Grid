@@ -28,7 +28,7 @@ local playerGUID = UnitGUID("player")
 -- Currently selected raid member frame.
 local coloredFrame
 local UpdateRoster
-local width, height = 32, 32
+local size = oUF.size
 
 if playerName == "Kanne" then
 	playerClass = "PALADIN"
@@ -142,11 +142,11 @@ if libheal then
 			mod = libheal:GetHealModifier(guid)
 			incPer = (mod * incHeal) / max
 			per = UnitHealth(unit) / max
-			incSize = incPer * height
-			size = height * per
+			incSize = incPer * oUF.size
+			size = oUF.size * per
 
-			if incSize + size >= height then
-				incSize = height - size
+			if incSize + size >= oUF.size then
+				incSize = oUF.size - size
 			end
 
 			return incSize, incHeal, mod
@@ -168,7 +168,7 @@ if libheal then
 
 		local incSize, incHeal, healMod = heals:GetIncSize(guid, unit)
 		if incSize then
-			local size = height * (UnitHealth(unit) / UnitHealthMax(unit))
+			local size = oUF.size * (UnitHealth(unit) / UnitHealthMax(unit))
 			frame.heal:SetHeight(incSize)
 			frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, size)
 			frame.heal:SetPoint("LEFT", frame, "LEFT")
