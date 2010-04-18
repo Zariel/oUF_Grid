@@ -12,7 +12,7 @@ local unpack = unpack
 local UnitDebuff = UnitDebuff
 local UnitInRaid = UnitInRaid
 
-local size = 32
+local size = 40
 oUF.size = size
 
 local supernova = [[Interface\AddOns\oUF_Grid\media\nokiafc22.ttf]]
@@ -61,12 +61,19 @@ local ColorGradient = function(perc, r1, g1, b1, r2, g2, b2, r3, g3, b3)
 	return { r2 + (r3-r2)*relperc, g2 + (g3-g2)*relperc, b2 + (b3-b2)*relperc }
 end
 
+local guidCache = setmetatable({}, {
+	__index = function(self, name)
+		self[name] = UnitGUID(name)
+	end
+})
+
 local Name_Update = function(self, event, unit)
 	if self.unit ~= unit then return end
 
 	--self:Reset()
 
 	local n, s = UnitName(unit)
+	self.guid = guidCache[unit]
 	self.name = string.utf8sub(n, 1, 3)
 
 	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
@@ -102,7 +109,7 @@ local Health_Update = function(self, event, unit, bar, current, max)
 
 	-- Hopefully this fixes everything ...
 	if self.UpdateHeals then
-		self:UpdateHeals(UnitGUID(self.unit))
+		self:UpdateHeals(self.guid)
 	end
 end
 
@@ -160,7 +167,7 @@ local frame = function(settings, self, unit)
 	heal:SetPoint("LEFT", self, "LEFT")
 	heal:SetPoint("RIGHT", self, "RIGHT")
 	heal:SetTexture(texture)
-	heal:SetVertexColor(0, 1, 0)
+	heal:SetVertexColor(0, 1, 0, 0.8)
 	heal:Hide()
 
 	self.heal = heal
