@@ -26,7 +26,7 @@ local playerName, playerRealm = UnitName("player"), GetRealmName()
 local playerGUID = UnitGUID("player")
 
 -- Currently selected raid member frame.
-local coloredFrame
+local curFrame
 local UpdateRoster
 local size = oUF.size
 
@@ -228,13 +228,17 @@ function f:UNIT_AURA(event, unit)
 		frame.Dispell = true
 		frame.border:Show()
 	elseif frame.Dispell then
-		if colouredFrame and colouredFrame ~= colouredFrame or not colouredFrame then
+		if (curFrame ~= frame) or not curFrame then
 			frame.border:Hide()
-			frame.Dispell = False
+		elseif curFrame == frame then
+			frame.border:SetVertexColor(1, 1, 1)
 		end
+		frame.Dispell = False
+	elseif curFrame and curFrame == frame then
+		frame.border:SetVertexColor(1, 1, 1)
 	end
 
-	if exp and exp > 0 and dur and dur > 0 then
+	if (exp and exp > 0) and (dur and dur > 0) then
 		frame.cd:SetCooldown(exp - dur, dur)
 		frame.cd:Show()
 	else
@@ -274,24 +278,36 @@ function f:PLAYER_TARGET_CHANGED()
 		end
 	end
 
+	-- Deselected
 	if not frame then
-		if coloredFrame then
-			if not coloredFrame.Dispell then
-				coloredFrame.border:Hide()
+		if curFrame then
+			if not curFrame.Dispell then
+				curFrame.border:Hide()
+				curFrame = nil
 			end
-			coloredFrame = nil
 		end
 		return
 	end
 
-	if coloredFrame and not coloredFrame.Dispell then
-		coloredFrame.border:Hide()
-	end
-
-	if not frame.Dispell and frame.border then
-		frame.border:SetVertexColor(1, 1, 1)
-		frame.border:Show()
-		coloredFrame = frame
+	if curFrame then
+		if curFrame == frame then
+			if frame.Dispell then
+				return
+			else
+				frame.border:SetVertexColor(1, 1, 1)
+			end
+		else
+			curFrame.border:Hide()
+			frame.border:SetVertexColor(1, 1, 1)
+			frame.border:Show()
+			curFrame = frame
+		end
+	else
+		if not frame.Dispell then
+			frame.border:SetVertexColor(1, 1, 1)
+			frame.border:Show()
+		end
+		curFrame = frame
 	end
 end
 
