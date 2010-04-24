@@ -5,6 +5,8 @@ if not oUF then
 	return error("oUF_Grid requires oUF")
 end
 
+local grid = setmetatable({}, { __index = oUF })
+
 local UnitName = UnitName
 local UnitClass = UnitClass
 local select = select
@@ -243,6 +245,8 @@ local frame = function(settings, self, unit)
 	self.incHeal = 0
 	self.healMod = 0
 
+	self.frequentUpdates = true
+
 	self.Reset = reset
 
 	return self
@@ -255,8 +259,8 @@ local style = setmetatable({
 	__call = frame,
 })
 
-oUF:RegisterStyle("Kanne-Grid", style)
-oUF:SetActiveStyle("Kanne-Grid")
+grid:RegisterStyle("Kanne-Grid", style)
+grid:SetActiveStyle("Kanne-Grid")
 
 local f = CreateFrame("Frame", "oUF_Grid", UIParent)
 f:SetHeight(20)
