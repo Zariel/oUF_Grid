@@ -283,8 +283,8 @@ function f:PLAYER_TARGET_CHANGED()
 		if curFrame then
 			if not curFrame.Dispell then
 				curFrame.border:Hide()
-				curFrame = nil
 			end
+			curFrame = nil
 		end
 		return
 	end
@@ -298,8 +298,10 @@ function f:PLAYER_TARGET_CHANGED()
 			end
 		else
 			curFrame.border:Hide()
-			frame.border:SetVertexColor(1, 1, 1)
-			frame.border:Show()
+			if not frame.Dispell then
+				frame.border:SetVertexColor(1, 1, 1)
+				frame.border:Show()
+			end
 			curFrame = frame
 		end
 	else
