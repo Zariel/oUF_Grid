@@ -5,6 +5,9 @@ if not oUF then
     return error("oUF_Grid requires oUF")
 end
 
+_G.KanneGrid = {}
+local kgrid = _G.KanneGrid
+
 local grid = setmetatable({}, { __index = oUF })
 
 local UnitName = UnitName
@@ -253,6 +256,9 @@ local frame = function(self, unit, single)
 
     self.Reset = reset
 
+    self:RegisterEvent("UNIT_AURA", kgrid.UNIT_AURA)
+    self:RegisterEvent("PLAYER_TARGET_CHANGED", kgrid.PLAYER_TARGET_CHANGED)
+
     return self
 end
 
@@ -269,8 +275,6 @@ local SubGroups = function()
     return t
 end
 
-local raid = {}
---oUF:Factory(function(self)
 local f = CreateFrame("Frame", "oUF_Grid", UIParent)
 f:SetHeight(20)
 f:SetWidth(20)
@@ -278,50 +282,56 @@ f:SetPoint("CENTER")
 f:SetMovable(true)
 f:SetUserPlaced(true)
 
-for i = 1, 8 do
-    local r
+local bg = CreateFrame("Frame", nil, f)
 
-    if(i == 1) then
-        -- As Haste would say;
-        -- ZA WARUDO !!!
-        r = oUF:SpawnHeader(nil, nil, "solo,party,raid",
-            "showParty", true,
-            "showPlayer", true,
-            "showSolo", true,
-            "showRaid", true,
-            "groupFilter", i,
-            "yOffset", - 9,
-            "oUF-initialConfigFunction", string.format([[
-                self:SetHeight(%d)
-                self:SetWidth(%d)
-            ]], size, size)
-        )
-        r:SetPoint("TOPLEFT", f, "TOPLEFT", 20, 0)
-    else
-        r = oUF:SpawnHeader(nil, nil, "solo,party,raid",
-            "showRaid", true,
-            "groupFilter", i,
-            "yOffset", - 9,
-            "oUF-initialConfigFunction", string.format([[
-                self:SetHeight(%d)
-                self:SetWidth(%d)
-            ]], size, size)
-        )
-        r:SetPoint("TOPLEFT", raid[i - 1], "TOPRIGHT", 9, 0)
+local raid = {}
+oUF:Factory(function(self)
+    for i = 1, 8 do
+        local r
+
+        if(i == 1) then
+            -- As Haste would say;
+            -- ZA WARUDO !!!
+            r = oUF:SpawnHeader(nil, nil, "solo,party,raid",
+                "showParty", true,
+                "showPlayer", true,
+                "showSolo", true,
+                "showRaid", true,
+                "groupFilter", i,
+                "yOffset", - 9,
+                "oUF-initialConfigFunction", string.format([[
+                    self:SetHeight(%d)
+                    self:SetWidth(%d)
+                ]], size, size)
+            )
+            r:SetPoint("TOPLEFT", f, "TOPLEFT", 20, 0)
+        else
+            r = oUF:SpawnHeader(nil, nil, "solo,party,raid",
+                "showRaid", true,
+                "groupFilter", i,
+                "yOffset", - 9,
+                "oUF-initialConfigFunction", string.format([[
+                    self:SetHeight(%d)
+                    self:SetWidth(%d)
+                ]], size, size)
+            )
+            r:SetPoint("TOPLEFT", raid[i - 1], "TOPRIGHT", 9, 0)
+        end
+
+        r:SetParent(f)
+        r:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
+        r:SetMovable(true)
+        r:Show()
+
+        r:Hide()
+
+        raid[i] = r
     end
 
-    r:SetParent(f)
-    r:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
-    r:SetMovable(true)
-    r:Show()
-
-    r:Hide()
-
-    raid[i] = r
-end
+    bg:PLAYER_LOGIN()
+end)
 
 -- BG
-local bg = CreateFrame("Frame", nil, f)
 bg:SetBackdrop({
     bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = true, tileSize = 16,
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
@@ -392,78 +402,3 @@ bg:RegisterEvent("PLAYER_LOGIN")
 bg:RegisterEvent("RAID_ROSTER_UPDATE")
 bg:RegisterEvent("PARTY_MEMBERS_CHANGED")
 --end)
-
-
---[[
--- BG
-local bg = CreateFrame("Frame", nil, f)
-bg:SetBackdrop({
-    bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = true, tileSize = 16,
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
-    insets = {left = 2, right = 2, top = 2, bottom = 2}
-})
-bg:SetBackdropColor(0, 0, 0, 0.6)
-bg:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
-bg:SetFrameLevel(0)
-bg:SetMovable(true)
-bg:EnableMouse(true)
-bg:SetClampedToScreen(true)
-
-bg:SetScript("OnMouseUp", function(self, button)
-    f:StopMovingOrSizing()
-end)
-
-bg:SetScript("OnMouseDown", function(self, button)
-    if button == "LeftButton" and IsModifiedClick("ALT") then
-        f:ClearAllPoints()
-        f:StartMoving()
-    end
-end)
-
-bg:SetScript("OnEvent", function(self, event, ...)
-    return self[event](self, event, ...)
-end)
-
-function bg:RAID_ROSTER_UPDATE()
-    if not UnitInRaid("player") then
-        return self:PARTY_MEMBERS_CHANGED()
-    else
-        self:Show()
-    end
-
-    local roster = SubGroups()
-
-    local h, last, first = 1
-    for k, v in ipairs(roster) do
-        if v > 0 then
-            if not first then
-                first = k
-            end
-            last = k
-        end
-        if v > roster[h] then
-            h = k
-        end
-    end
-
-    self:ClearAllPoints()
-    self:SetPoint("TOP", _G["oUF_Raid1"], "TOP", 0, 8)
-    self:SetPoint("LEFT", _G["oUF_Raid" .. first], "LEFT", -8 , 0)
-    self:SetPoint("RIGHT", _G["oUF_Raid" .. last], "RIGHT", 8, 0)
-    self:SetPoint("BOTTOM", _G["oUF_Raid" .. h], "BOTTOM", 0, -8)
-end
-
-function bg:PARTY_MEMBERS_CHANGED()
-    if UnitInRaid("player") then return end
-
-    self:ClearAllPoints()
-    self:SetPoint("BOTTOMRIGHT", _G["oUF_Raid1"], "BOTTOMRIGHT", 8, - 8)
-    self:SetPoint("TOPLEFT", _G["oUF_Raid1"], "TOPLEFT", - 8, 8)
-    self:Show()
-end
-
-bg.PLAYER_LOGIN = bg.RAID_ROSTER_UPDATE
-bg:RegisterEvent("PLAYER_LOGIN")
-bg:RegisterEvent("RAID_ROSTER_UPDATE")
-bg:RegisterEvent("PARTY_MEMBERS_CHANGED")
-]]
