@@ -89,29 +89,32 @@ local round = function(x, y)
     return math.floor((x * 10 ^ y)+ 0.5) / 10 ^ y
 end
 
-local Health_Update = function(self, event, unit, bar, current, max)
+local Health_Update = function(self, unit, min, max)
+    local current = UnitHealth(unit)
+    local parent = self:GetParent()
+
     local def = max - current
-    bar:SetValue(current)
+    self:SetValue(current)
 
     local per = round(current/max, 100)
     local col = ColorGradient(per, 1, 0, 0, 1, 1, 0, 1, 1, 1)
-    self.Name:SetTextColor(unpack(col))
+    parent.Name:SetTextColor(unpack(col))
 
-    if per > 0.9 or UnitIsDeadOrGhost(unit) then
-        self.Name:SetText(self.name)
+    if(per > 0.9 or UnitIsDeadOrGhost(unit)) then
+        parent.Name:SetText(parent.name)
     else
-        self.Name:SetFormattedText("-%0.1f", math.floor(def/100)/10)
+        parent.Name:SetFormattedText("-%0.1f", math.floor(def/100)/10)
     end
 
-    if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
-        bar.bg:SetVertexColor(0.3, 0.3, 0.3)
+    if(UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit)) then
+        self.bg:SetVertexColor(0.3, 0.3, 0.3)
     else
-        bar.bg:SetVertexColor(GetClassColor(unit))
+        self.bg:SetVertexColor(GetClassColor(unit))
     end
 
     -- Hopefully this fixes everything ...
-    if self.UpdateHeals then
-        self:UpdateHeals(self.guid)
+    if(parent.UpdateHeals) then
+        parent:UpdateHeals(parent.guid)
     end
 end
 
@@ -131,7 +134,7 @@ local OnLeave = function(self)
     self.Highlight:Hide()
 end
 
-local frame = function(settings, self, unit)
+local frame = function(self, unit, single)
     self.menu = menu
 
     self:EnableMouse(true)
@@ -174,9 +177,9 @@ local frame = function(settings, self, unit)
 
     self.heal = heal
 
+    hp.PostUpdate = Health_Update
     hp.bg = hpbg
     self.Health = hp
-    self.OverrideUpdateHealth = Health_Update
 
     local hl = hp:CreateTexture(nil, "OVERLAY")
     hl:SetAllPoints(self)
@@ -238,9 +241,10 @@ local frame = function(settings, self, unit)
 
     self.cd = cd
 
-    self.Range = true
-    self.inRangeAlpha = 1
-    self.outsideRangeAlpha = 0.4
+    self.Range = {
+        inRangeAlpha = 1,
+        outsideRangeAlpha = 0.4
+    }
 
     self.incHeal = 0
     self.healMod = 0
@@ -252,14 +256,7 @@ local frame = function(settings, self, unit)
     return self
 end
 
-local style = setmetatable({
-    ["initial-height"] = size,
-    ["initial-width"] = size,
-}, {
-    __call = frame,
-})
-
-grid:RegisterStyle("Kanne-Grid", style)
+grid:RegisterStyle("Kanne-Grid", frame)
 grid:SetActiveStyle("Kanne-Grid")
 
 local f = CreateFrame("Frame", "oUF_Grid", UIParent)
@@ -270,35 +267,49 @@ f:SetMovable(true)
 f:SetUserPlaced(true)
 
 local raid = {}
-for i = 1, 8 do
-    local r = oUF:Spawn("header", "oUF_Raid" .. i)
+oUF:Factory(function(self)
+    for i = 1, 8 do
+        local r
 
-    r:SetParent(f)
+        if(i == 1) then
+            -- As Haste would say;
+            -- ZA WARUDO !!!
+            r = oUF:SpawnHeader(nil, nil, "solo,party,raid",
+                "showParty", true,
+                "showPlayer", true,
+                "showSolo", true,
+                "showRaid", true,
+                "groupFilter", i,
+                "yOffset", - 9,
+                "oUF-initialConfigFunction", string.format([[
+                    self:SetHeight(%d)
+                    self:SetWidth(%d)
+                ]], size, size)
+            )
+            r:SetPoint("TOPLEFT", f, "TOPLEFT", 20, 0)
+        else
+            r = oUF:SpawnHeader(nil, nil, "solo,party,raid",
+                "showRaid", true,
+                "groupFilter", i,
+                "yOffset", - 9,
+                "oUF-initialConfigFunction", string.format([[
+                    self:SetHeight(%d)
+                    self:SetWidth(%d)
+                ]], size, size)
+            )
+            r:SetPoint("TOPLEFT", raid[i - 1], "TOPRIGHT", 9, 0)
+        end
 
-    r:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
+        r:SetParent(f)
+        r:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
+        r:SetMovable(true)
+        r:Show()
 
-    if i == 1 then
-        -- As Haste would say;
-        -- ZA WARUDO !!!
-        r:SetPoint("TOPLEFT", f, "TOPLEFT", 20, 0)
-        r:SetAttribute("showParty", true)
-        r:SetAttribute("showPlayer", true)
-        r:SetAttribute("showSolo", true)
-    else
-        r:SetPoint("TOPLEFT", raid[i - 1], "TOPRIGHT", 9, 0)
+        r:Hide()
+
+        raid[i] = r
     end
-
-    r:SetMovable(true)
-
-    r:SetManyAttributes(
-    "showRaid", true,
-    "groupFilter", i,
-    "yOffset", - 9
-    )
-
-    r:Show()
-    raid[i] = r
-end
+end)
 
 local SubGroups = function()
     local t = {}
@@ -310,6 +321,7 @@ local SubGroups = function()
     return t
 end
 
+--[[
 -- BG
 local bg = CreateFrame("Frame", nil, f)
 bg:SetBackdrop({
@@ -381,3 +393,4 @@ bg.PLAYER_LOGIN = bg.RAID_ROSTER_UPDATE
 bg:RegisterEvent("PLAYER_LOGIN")
 bg:RegisterEvent("RAID_ROSTER_UPDATE")
 bg:RegisterEvent("PARTY_MEMBERS_CHANGED")
+]]
