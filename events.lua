@@ -7,6 +7,7 @@ if not oUF then
     return error("oUF_Grid requires oUF")
 end
 
+local kgrid = _G.KanneGrid
 local libheal = LibStub("LibHealComm-4.0", true)
 
 local UnitName = UnitName
@@ -16,11 +17,6 @@ local unpack = unpack
 local UnitDebuff = UnitDebuff
 local UnitInRaid = UnitInRaid
 local GetTime = GetTime
-
-local f = CreateFrame("Frame")
-f:SetScript("OnEvent", function(self, event, ...)
-    return self[event](self, event, ...)
-end)
 
 local playerClass = select(2, UnitClass("player"))
 local playerName, playerRealm = UnitName("player"), GetRealmName()
@@ -193,7 +189,7 @@ if libheal then
 end
 
 local frame
-function f:UNIT_AURA(event, unit)
+function kgrid:UNIT_AURA(self)
     frame = oUF.units[unit]
     if not frame or frame.unit ~= unit then return end
 
@@ -254,65 +250,42 @@ function f:UNIT_AURA(event, unit)
     end
 end
 
-function f:PLAYER_TARGET_CHANGED()
-    local inRaid = UnitInRaid("target")
-    local frame
-    if inRaid then
-        if UnitExists("raid" .. inRaid + 1) then
-            frame = oUF.units["raid" .. inRaid + 1]
-        end
-    else
-        local name = UnitName("target")
-        if name == playerName and oUF.units.player then
-            frame = oUF.units.player
-        else
-            for i = 1, 4 do
-                if UnitExists("party" .. i) then
-                    if name == UnitName("party" .. i) then
-                        frame = oUF.units["party" .. i]
-                        break
-                    end
-                else
-                    break
-                end
-            end
-        end
-    end
-
+function kgrid:PLAYER_TARGET_CHANGED(event)
     -- Deselected
-    if not frame then
-        if curFrame then
-            if not curFrame.Dispell then
+    if(not UnitName("target")) then
+        if(curFrame) then
+            if(not curFrame.Dispell) then
                 curFrame.border:Hide()
             end
+
             curFrame = nil
         end
         return
     end
 
-    if curFrame then
-        if curFrame == frame then
-            if frame.Dispell then
+    if(curFrame) then
+        if(self == curFrame) then
+            if(self.Dispell) then
                 return
             else
-                frame.border:SetVertexColor(1, 1, 1)
+                self.border:SetVertexColor(1, 1, 1)
             end
         else
             curFrame.border:Hide()
-            if not frame.Dispell then
-                frame.border:SetVertexColor(1, 1, 1)
-                frame.border:Show()
+
+            if(not self.Dispell) then
+                self.border:SetVertexColor(1, 1, 1)
+                self.border:Show()
             end
-            curFrame = frame
+
+            curFrame = self
         end
     else
-        if not frame.Dispell then
-            frame.border:SetVertexColor(1, 1, 1)
-            frame.border:Show()
+        if(not self.Dispell) then
+            self.border:SetVertexColor(1, 1, 1)
+            self.border:Show()
         end
-        curFrame = frame
+
+        curFrame = self
     end
 end
-
-f:RegisterEvent("UNIT_AURA")
-f:RegisterEvent("PLAYER_TARGET_CHANGED")
