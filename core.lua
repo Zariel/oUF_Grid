@@ -271,51 +271,51 @@ f:SetUserPlaced(true)
 
 local raid = {}
 for i = 1, 8 do
-	local r = oUF:Spawn("header", "oUF_Raid" .. i)
+    local r = oUF:Spawn("header", "oUF_Raid" .. i)
 
-	r:SetParent(f)
+    r:SetParent(f)
 
-	r:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
+    r:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
 
-	if i == 1 then
-		-- As Haste would say;
-		-- ZA WARUDO !!!
-		r:SetPoint("TOPLEFT", f, "TOPLEFT", 20, 0)
-		r:SetAttribute("showParty", true)
-		r:SetAttribute("showPlayer", true)
-		r:SetAttribute("showSolo", true)
-	else
-		r:SetPoint("TOPLEFT", raid[i - 1], "TOPRIGHT", 9, 0)
-	end
+    if i == 1 then
+        -- As Haste would say;
+        -- ZA WARUDO !!!
+        r:SetPoint("TOPLEFT", f, "TOPLEFT", 20, 0)
+        r:SetAttribute("showParty", true)
+        r:SetAttribute("showPlayer", true)
+        r:SetAttribute("showSolo", true)
+    else
+        r:SetPoint("TOPLEFT", raid[i - 1], "TOPRIGHT", 9, 0)
+    end
 
-	r:SetMovable(true)
+    r:SetMovable(true)
 
-	r:SetManyAttributes(
-		"showRaid", true,
-		"groupFilter", i,
-		"yOffset", - 9
-	)
+    r:SetManyAttributes(
+    "showRaid", true,
+    "groupFilter", i,
+    "yOffset", - 9
+    )
 
-	r:Show()
-	raid[i] = r
+    r:Show()
+    raid[i] = r
 end
 
 local SubGroups = function()
-	local t = {}
-	for i = 1, 8 do t[i] = 0 end
-	for i = 1, GetNumRaidMembers() do
-		local s = select(3, GetRaidRosterInfo(i))
-		t[s] = t[s] + 1
-	end
-	return t
+    local t = {}
+    for i = 1, 8 do t[i] = 0 end
+    for i = 1, GetNumRaidMembers() do
+        local s = select(3, GetRaidRosterInfo(i))
+        t[s] = t[s] + 1
+    end
+    return t
 end
 
 -- BG
 local bg = CreateFrame("Frame", nil, f)
 bg:SetBackdrop({
-	bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = true, tileSize = 16,
-	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
-	insets = {left = 2, right = 2, top = 2, bottom = 2}
+    bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = true, tileSize = 16,
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
+    insets = {left = 2, right = 2, top = 2, bottom = 2}
 })
 bg:SetBackdropColor(0, 0, 0, 0.6)
 bg:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
@@ -325,56 +325,56 @@ bg:EnableMouse(true)
 bg:SetClampedToScreen(true)
 
 bg:SetScript("OnMouseUp", function(self, button)
-	f:StopMovingOrSizing()
+    f:StopMovingOrSizing()
 end)
 
 bg:SetScript("OnMouseDown", function(self, button)
-	if button == "LeftButton" and IsModifiedClick("ALT") then
-		f:ClearAllPoints()
-		f:StartMoving()
-	end
+    if button == "LeftButton" and IsModifiedClick("ALT") then
+        f:ClearAllPoints()
+        f:StartMoving()
+    end
 end)
 
 bg:SetScript("OnEvent", function(self, event, ...)
-	return self[event](self, event, ...)
+    return self[event](self, event, ...)
 end)
 
 function bg:RAID_ROSTER_UPDATE()
-	if not UnitInRaid("player") then
-		return self:PARTY_MEMBERS_CHANGED()
-	else
-		self:Show()
-	end
+    if not UnitInRaid("player") then
+        return self:PARTY_MEMBERS_CHANGED()
+    else
+        self:Show()
+    end
 
-	local roster = SubGroups()
+    local roster = SubGroups()
 
-	local h, last, first = 1
-	for k, v in ipairs(roster) do
-		if v > 0 then
-			if not first then
-				first = k
-			end
-			last = k
-		end
-		if v > roster[h] then
-			h = k
-		end
-	end
+    local h, last, first = 1
+    for k, v in ipairs(roster) do
+        if v > 0 then
+            if not first then
+                first = k
+            end
+            last = k
+        end
+        if v > roster[h] then
+            h = k
+        end
+    end
 
-	self:ClearAllPoints()
-	self:SetPoint("TOP", _G["oUF_Raid1"], "TOP", 0, 8)
-	self:SetPoint("LEFT", _G["oUF_Raid" .. first], "LEFT", -8 , 0)
-	self:SetPoint("RIGHT", _G["oUF_Raid" .. last], "RIGHT", 8, 0)
-	self:SetPoint("BOTTOM", _G["oUF_Raid" .. h], "BOTTOM", 0, -8)
+    self:ClearAllPoints()
+    self:SetPoint("TOP", _G["oUF_Raid1"], "TOP", 0, 8)
+    self:SetPoint("LEFT", _G["oUF_Raid" .. first], "LEFT", -8 , 0)
+    self:SetPoint("RIGHT", _G["oUF_Raid" .. last], "RIGHT", 8, 0)
+    self:SetPoint("BOTTOM", _G["oUF_Raid" .. h], "BOTTOM", 0, -8)
 end
 
 function bg:PARTY_MEMBERS_CHANGED()
-	if UnitInRaid("player") then return end
+    if UnitInRaid("player") then return end
 
-	self:ClearAllPoints()
-	self:SetPoint("BOTTOMRIGHT", _G["oUF_Raid1"], "BOTTOMRIGHT", 8, - 8)
-	self:SetPoint("TOPLEFT", _G["oUF_Raid1"], "TOPLEFT", - 8, 8)
-	self:Show()
+    self:ClearAllPoints()
+    self:SetPoint("BOTTOMRIGHT", _G["oUF_Raid1"], "BOTTOMRIGHT", 8, - 8)
+    self:SetPoint("TOPLEFT", _G["oUF_Raid1"], "TOPLEFT", - 8, 8)
+    self:Show()
 end
 
 bg.PLAYER_LOGIN = bg.RAID_ROSTER_UPDATE
