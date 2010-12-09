@@ -17,7 +17,7 @@ local UnitInRaid = UnitInRaid
 local GetTime = GetTime
 
 local f = CreateFrame("Frame")
-f:SetScript("OnEvent", function(self, evnet, ...)
+f:SetScript("OnEvent", function(self, event, ...)
 	return self[event](self, event, ...)
 end)
 
