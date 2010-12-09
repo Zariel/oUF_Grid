@@ -250,9 +250,9 @@ function kgrid:UNIT_AURA(event)
     end
 end
 
-function kgrid:PLAYER_TARGET_CHANGED(event)
+function kgrid:PLAYER_TARGET_CHANGED(event, ...)
     -- Deselected
-    if(not UnitName("target")) then
+    if((self.unit == "player" and playerName ~= UnitName("target")) or not UnitName("target")) then
         if(curFrame) then
             if(not curFrame.Dispell) then
                 curFrame.border:Hide()
