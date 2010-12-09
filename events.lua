@@ -189,26 +189,26 @@ if libheal then
 end
 
 local frame
-function kgrid:UNIT_AURA(self)
-    frame = oUF.units[unit]
-    if not frame or frame.unit ~= unit then return end
+function kgrid:UNIT_AURA(event)
+    if(not self or self.unit ~= unit) then return end
 
     local cur, tex, dis, dur, exp
     local name, rank, buffTexture, count, duration, expire, dtype, isPlayer
+
     for i = 1, 40 do
         name, rank, buffTexture, count, dtype, duration, expire, isPlayer = UnitAura(unit, i, "HARMFUL")
-        if not name then break end
+        if(not name) then break end
 
-        if not cur or (debuffs[name] >= debuffs[cur]) then
-            if debuffs[name] > 0 and debuffs[name] > debuffs[cur or 1] then
+        if(not cur or (debuffs[name] >= debuffs[cur])) then
+            if(debuffs[name] > 0 and debuffs[name] > debuffs[cur or 1]) then
                 -- Highest priority
                 cur = name
                 tex = buffTexture
                 dis = dtype or "none"
                 exp = expire
                 dur = duration
-            elseif dtype and dtype ~= "none" then
-                if not dis or (dispellPriority[dtype] > dispellPriority[dis]) then
+            elseif(dtype and dtype ~= "none") then
+                if(not dis or (dispellPriority[dtype] > dispellPriority[dis])) then
                     cur = name
                     tex = buffTexture
                     dis = dtype
@@ -219,34 +219,34 @@ function kgrid:UNIT_AURA(self)
         end
     end
 
-    if dis then
+    if(dis) then
         local col = DebuffTypeColor[dis]
-        frame.border:SetVertexColor(col.r, col.g, col.b)
-        frame.Dispell = true
-        frame.border:Show()
-    elseif frame.Dispell then
-        if (curFrame ~= frame) or not curFrame then
-            frame.border:Hide()
-        elseif curFrame == frame then
-            frame.border:SetVertexColor(1, 1, 1)
+        self.border:SetVertexColor(col.r, col.g, col.b)
+        self.Dispell = true
+        self.border:Show()
+    elseif self.Dispell then
+        if (curself ~= frame) or not curFrame then
+            self.border:Hide()
+        elseif curself == frame then
+            self.border:SetVertexColor(1, 1, 1)
         end
-        frame.Dispell = False
-    elseif curFrame and curFrame == frame then
-        frame.border:SetVertexColor(1, 1, 1)
+        self.Dispell = False
+    elseif curself and curFrame == frame then
+        self.border:SetVertexColor(1, 1, 1)
     end
 
     if (exp and exp > 0) and (dur and dur > 0) then
-        frame.cd:SetCooldown(exp - dur, dur)
-        frame.cd:Show()
+        self.cd:SetCooldown(exp - dur, dur)
+        self.cd:Show()
     else
-        frame.cd:Hide()
+        self.cd:Hide()
     end
 
     if cur then
-        frame.Icon:SetTexture(tex)
-        frame.Icon:Show()
+        self.Icon:SetTexture(tex)
+        self.Icon:Show()
     else
-        frame.Icon:Hide()
+        self.Icon:Hide()
     end
 end
 
