@@ -1,7 +1,6 @@
 local _G = getfenv(0)
 
---local oUF = _G.oufgrid or _G.oUF
-local oUF = _G.oUF
+local oUF = _G.oufgrid or _G.oUF
 
 if not oUF then
 	return error("oUF_Grid requires oUF")
@@ -251,8 +250,32 @@ function kgrid:UNIT_AURA(event)
 end
 
 function kgrid:PLAYER_TARGET_CHANGED(event, ...)
+	local inRaid = UnitInRaid("target")
+	local frame
+	if inRaid then
+		if UnitExists("raid" .. inRaid + 1) then
+			frame = oUF.units["raid" .. inRaid + 1]
+		end
+	else
+		local name = UnitName("target")
+		if(name == playerName and oUF.units.player) then
+			frame = oUF.units.player
+		else
+			for i = 1, 4 do
+				if UnitExists("party" .. i) then
+					if name == UnitName("party" .. i) then
+						frame = oUF.units["party" .. i]
+						break
+					end
+				else
+					break
+				end
+			end
+		end
+	end
+
 	-- Deselected
-	if((self.unit == "player" and playerName ~= UnitName("target")) or not UnitName("target")) then
+	if(not frame) then
 		if(curFrame) then
 			if(not curFrame.Dispell) then
 				curFrame.border:Hide()
@@ -260,32 +283,33 @@ function kgrid:PLAYER_TARGET_CHANGED(event, ...)
 
 			curFrame = nil
 		end
+
 		return
 	end
 
 	if(curFrame) then
-		if(self == curFrame) then
-			if(self.Dispell) then
+		if(frame == curFrame) then
+			if(frame.Dispell) then
 				return
 			else
-				self.border:SetVertexColor(1, 1, 1)
+				frame.border:SetVertexColor(1, 1, 1)
 			end
 		else
 			curFrame.border:Hide()
 
-			if(not self.Dispell) then
-				self.border:SetVertexColor(1, 1, 1)
-				self.border:Show()
+			if(not frame.Dispell) then
+				frame.border:SetVertexColor(1, 1, 1)
+				frame.border:Show()
 			end
 
-			curFrame = self
+			curFrame = frame
 		end
 	else
-		if(not self.Dispell) then
-			self.border:SetVertexColor(1, 1, 1)
-			self.border:Show()
+		if(not frame.Dispell) then
+			frame.border:SetVertexColor(1, 1, 1)
+			frame.border:Show()
 		end
 
-		curFrame = self
+		curFrame = frame
 	end
 end
