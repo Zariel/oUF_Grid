@@ -261,6 +261,7 @@ local frame = function(self, unit, single)
 	self:RegisterEvent("UNIT_NAME_UPDATE", Name_Update)
 
 	table.insert(self.__elements, Name_Update)
+	table.insert(self.__elements, kgrid.PLAYER_TARGET_CHANGED)
 
 	return self
 end
