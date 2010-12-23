@@ -1,5 +1,4 @@
 local _G = getfenv(0)
-
 local oUF = _G.oufgrid or _G.oUF
 
 if not oUF then
@@ -7,7 +6,7 @@ if not oUF then
 end
 
 local kgrid = _G.KanneGrid
-local libheal = LibStub("LibHealComm-4.0", true)
+--local libheal = LibStub("LibHealComm-4.0", true)
 
 local UnitName = UnitName
 local UnitClass = UnitClass
@@ -252,9 +251,9 @@ end
 function kgrid:PLAYER_TARGET_CHANGED(event, ...)
 	local inRaid = UnitInRaid("target")
 	local frame
-	if inRaid then
-		if UnitExists("raid" .. inRaid + 1) then
-			frame = oUF.units["raid" .. inRaid + 1]
+	if(inRaid) then
+		if UnitExists("raid" .. inRaid) then
+			frame = oUF.units["raid" .. inRaid]
 		end
 	else
 		local name = UnitName("target")

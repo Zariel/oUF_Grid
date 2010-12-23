@@ -92,8 +92,7 @@ local round = function(x, y)
 	return math.floor((x * 10 ^ y)+ 0.5) / 10 ^ y
 end
 
-local Health_Update = function(self, unit, min, max)
-	local current = UnitHealth(unit)
+local Health_Update = function(self, unit, current, max)
 	local parent = self:GetParent()
 
 	local def = max - current
@@ -164,6 +163,8 @@ local frame = function(self, unit, single)
 	hp:SetStatusBarColor(0, 0, 0, 0.75)
 	--hp:SetAlpha(0.)
 
+	hp.frequentUpdates = true
+
 	local hpbg = hp:CreateTexture(nil, "BACKGROUND")
 	hpbg:SetAllPoints(hp)
 	hpbg:SetTexture(texture)
@@ -177,6 +178,7 @@ local frame = function(self, unit, single)
 	heal:SetTexture(texture)
 	heal:SetVertexColor(0, 1, 0, 0.8)
 	heal:Hide()
+
 
 	self.heal = heal
 
@@ -304,8 +306,8 @@ oUF:Factory(function(self)
 				"groupFilter", i,
 				"yOffset", - 9,
 				"oUF-initialConfigFunction", string.format([[
-				self:SetHeight(%d)
-				self:SetWidth(%d)
+					self:SetHeight(%d)
+					self:SetWidth(%d)
 				]], size, size)
 			)
 			r:SetPoint("TOPLEFT", f, "TOPLEFT", 20, 0)
@@ -315,15 +317,14 @@ oUF:Factory(function(self)
 				"groupFilter", i,
 				"yOffset", - 9,
 				"oUF-initialConfigFunction", string.format([[
-				self:SetHeight(%d)
-				self:SetWidth(%d)
+					self:SetHeight(%d)
+					self:SetWidth(%d)
 				]], size, size)
 			)
 			r:SetPoint("TOPLEFT", raid[i - 1], "TOPRIGHT", 9, 0)
 		end
 
 		r:SetParent(f)
-		r:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
 		r:SetMovable(true)
 		r:Show()
 
