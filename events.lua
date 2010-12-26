@@ -75,8 +75,7 @@ do
 			["Disease"] = true,
 		},
 		["SHAMAN"] = {
-			["Poison"] = true,
-			["Disease"] = true,
+			["Magic"] = true,
 			["Curse"] = true,
 		},
 		["PALADIN"] = {
@@ -90,6 +89,7 @@ do
 		["DRUID"] = {
 			["Curse"] = true,
 			["Poison"] = true,
+			["Magic"] = true,
 		},
 	}
 	if t[playerClass] then
