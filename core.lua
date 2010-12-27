@@ -179,8 +179,9 @@ local frame = function(self, unit, single)
 	heal:SetVertexColor(0, 1, 0, 0.8)
 	heal:Hide()
 
+	heal.Override = kgrid.HealPredict
 
-	self.heal = heal
+	self.HealPrediction = heal
 
 	hp.PostUpdate = Health_Update
 	hp.bg = hpbg

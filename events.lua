@@ -6,7 +6,6 @@ if not oUF then
 end
 
 local kgrid = _G.KanneGrid
---local libheal = LibStub("LibHealComm-4.0", true)
 
 local UnitName = UnitName
 local UnitClass = UnitClass
@@ -102,88 +101,36 @@ do
 	end
 end
 
--- Lib Heal Support
+function kgrid:HealPredict(event, unit)
+	if(self.unit ~= unit) then return end
+	local hp = self.HealPrediction
 
-if libheal then
-	local heals = {}
-	local roster = libheal:GetGUIDUnitMapTable()
+	local incHeal = UnitGetIncomingHeals(unit) or 0
+	if(incHeal > 0) then
+		local max = UnitHealthMax(unit)
+		local incPer = incHeal / max
+		local per = UnitHealth(unit) / max
+		local incSize = incPer * oUF.size
+		local size = oUF.size * per
 
-	function heals:HealComm_HealStopped(event, casterGUID, spellID, type, interuptted, ...)
-		self:HealComm_HealStarted(nil, nil, nil, nil, nil, ...)
-	end
+		if(per > 98) then return hp:Hide() end
 
-	function heals:HealComm_ModifierChanged(event, guid)
-		self:UpdateHeals(nil, nil, nil, nil, nil, guid)
-	end
-
-	function heals:HealComm_HealDelayed(event, healerName, healSize, endTime, ...)
-		self:HealComm_HealStarted(event, healerName, healSize, endTime, ...)
-	end
-
-	heals.HealComm_HealUpdated = heals.HealComm_HealDelayed
-
-	function heals:HealComm_HealStarted(event, healerGUID, spellID, healType, endTime, ...)
-		for i = 1, select("#", ...) do
-			self:UpdateHeals(select(i, ...))
+		if(incSize + size >= oUF.size) then
+			incSize = oUF.size - size
 		end
-	end
 
-	local mod, incPer, per, incSize, size, max
-	function heals:GetIncSize(guid, unit)
-		local incHeal = libheal:GetHealAmount(guid, libheal.ALL_HEALS)
-
-		if incHeal then
-			max = UnitHealthMax(unit)
-			mod = libheal:GetHealModifier(guid)
-			incPer = (mod * incHeal) / max
-			per = UnitHealth(unit) / max
-			incSize = incPer * oUF.size
-			size = oUF.size * per
-
-			if incSize + size >= oUF.size then
-				incSize = oUF.size - size
-			end
-
-			return incSize, incHeal, mod
+		if(incSize > 0) then
+			hp:SetHeight(incSize)
+			hp:SetPoint("BOTTOM", self, "BOTTOM", 0, size)
+			hp:SetPoint("LEFT", self, "LEFT")
+			hp:SetPoint("RIGHT", self, "RIGHT")
+			hp:Show()
 		else
-			return
+			hp:Hide()
 		end
+	else
+		hp:Hide()
 	end
-
-	function heals:UpdateHeals(guid)
-		local unit = roster[guid]
-		if not oUF.units[unit] then return end
-
-		local frame = oUF.units[unit]
-
-		local max, current = UnitHealth(unit), UnitHealthMax(unit)
-		if current == max then
-			return frame.heal:Hide()
-		end
-
-		local incSize, incHeal, healMod = heals:GetIncSize(guid, unit)
-		if incSize then
-			local size = oUF.size * (UnitHealth(unit) / UnitHealthMax(unit))
-			frame.heal:SetHeight(incSize)
-			frame.heal:SetPoint("BOTTOM", frame, "BOTTOM", 0, size)
-			frame.heal:SetPoint("LEFT", frame, "LEFT")
-			frame.heal:SetPoint("RIGHT", frame, "RIGHT")
-			frame.heal:Show()
-		else
-			frame.heal:Hide()
-		end
-
-		frame.incHeal = incHeal or 0
-		frame.healMod = healMod or 1
-	end
-
-	oUF.UpdateHeals = heals.UpdateHeals
-
-	libheal.RegisterCallback(heals, "HealComm_HealStopped")
-	libheal.RegisterCallback(heals, "HealComm_HealDelayed")
-	libheal.RegisterCallback(heals, "HealComm_HealUpdated")
-	libheal.RegisterCallback(heals, "HealComm_HealStarted")
-	libheal.RegisterCallback(heals, "HealComm_ModifierChanged")
 end
 
 local frame
