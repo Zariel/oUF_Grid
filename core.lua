@@ -95,31 +95,30 @@ local round = function(x, y)
 	return math.floor((x * 10 ^ y)+ 0.5) / 10 ^ y
 end
 
-local Health_Update = function(self, unit, current, max)
-	local parent = self:GetParent()
+local Health_Update = function(self, event, unit)
+	if(self.unit ~= unit) then return end
 
-	local def = max - current
-	self:SetValue(current)
+	local hp = self.Health
+	local min = UnitHealth(unit)
+	local max = UnitHealthMax(unit)
 
-	local per = round(current/max, 100)
+	hp:SetMinMaxValues(0, max)
+	hp:SetValue(min)
+
+	local per = round(min/max, 100)
 	local col = ColorGradient(per, 1, 0, 0, 1, 1, 0, 1, 1, 1)
-	parent.Name:SetTextColor(unpack(col))
+	self.Name:SetTextColor(unpack(col))
 
 	if(per > 0.9 or UnitIsDeadOrGhost(unit)) then
-		parent.Name:SetText(parent.name)
+		self.Name:SetText(self.name)
 	else
-		parent.Name:SetFormattedText("-%0.1f", math.floor(def/100)/10)
+		self.Name:SetFormattedText("-%0.1f", math.floor((max - min) / 100)/10)
 	end
 
 	if(UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit)) then
-		self.bg:SetVertexColor(0.3, 0.3, 0.3)
+		hp.bg:SetVertexColor(0.3, 0.3, 0.3)
 	else
-		self.bg:SetVertexColor(GetClassColor(unit))
-	end
-
-	-- Hopefully this fixes everything ...
-	if(parent.UpdateHeals) then
-		parent:UpdateHeals(parent.guid)
+		hp.bg:SetVertexColor(GetClassColor(unit))
 	end
 end
 
@@ -168,8 +167,6 @@ local frame = function(self, unit, single)
 	hp:SetStatusBarColor(0, 0, 0, 0.75)
 	--hp:SetAlpha(0.)
 
-	hp.frequentUpdates = true
-
 	local hpbg = hp:CreateTexture(nil, "BACKGROUND")
 	hpbg:SetAllPoints(hp)
 	hpbg:SetTexture(texture)
@@ -188,7 +185,7 @@ local frame = function(self, unit, single)
 
 	self.HealPrediction = heal
 
-	hp.PostUpdate = Health_Update
+	hp.Override = Health_Update
 	hp.bg = hpbg
 	self.Health = hp
 
