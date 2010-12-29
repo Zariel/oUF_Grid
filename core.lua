@@ -8,6 +8,9 @@ end
 _G.KanneGrid = {}
 local kgrid = _G.KanneGrid
 
+local f = CreateFrame("Frame", "oUF_Grid", UIParent)
+local bg = CreateFrame("Frame", nil, f)
+
 local grid = setmetatable({}, { __index = oUF })
 
 local UnitName = UnitName
@@ -128,6 +131,8 @@ end
 
 local OnEnter = function(self)
 	UnitFrame_OnEnter(self)
+
+	GameTooltip:SetPoint("BOTTOMLEFT", bg, "TOPLEFT")
 	self.Highlight:Show()
 end
 
@@ -282,14 +287,12 @@ local SubGroups = function()
 	return t
 end
 
-local f = CreateFrame("Frame", "oUF_Grid", UIParent)
 f:SetHeight(20)
 f:SetWidth(20)
 f:SetPoint("CENTER")
 f:SetMovable(true)
 f:SetUserPlaced(true)
 
-local bg = CreateFrame("Frame", nil, f)
 
 local raid = {}
 oUF:Factory(function(self)
