@@ -71,14 +71,25 @@ end
 
 local guidCache = setmetatable({}, {
 	__index = function(self, name)
-		self[name] = UnitGUID(name)
+		local guid = UnitGUID(name)
+		rawset(self, name, guid)
+		return guid
 	end
 })
 
+local menu = function(self)
+	local unit = self.unit:sub(1, -2)
+	local cunit = self.unit:gsub("(.)", string.upper, 1)
+
+	if(unit == "party" or unit == "partypet") then
+		ToggleDropDownMenu(1, nil, _G["PartyMemberFrame"..self.id.."DropDown"], "cursor", 0, 0)
+	elseif(_G[cunit.."FrameDropDown"]) then
+		ToggleDropDownMenu(1, nil, _G[cunit.."FrameDropDown"], "cursor", 0, 0)
+	end
+end
+
 local Name_Update = function(self, event, unit)
 	if(self.unit ~= unit) then return end
-
-	--self:Reset()
 
 	local n, s = UnitName(unit)
 	self.guid = guidCache[unit]
@@ -105,7 +116,7 @@ local Health_Update = function(self, event, unit)
 	hp:SetMinMaxValues(0, max)
 	hp:SetValue(min)
 
-	local per = round(min/max, 100)
+	local per = round(min / max, 100)
 	local col = ColorGradient(per, 1, 0, 0, 1, 1, 0, 1, 1, 1)
 	self.Name:SetTextColor(unpack(col))
 
@@ -120,12 +131,6 @@ local Health_Update = function(self, event, unit)
 	else
 		hp.bg:SetVertexColor(GetClassColor(unit))
 	end
-end
-
-local reset = function(self)
-	self.border:Hide()
-	self.Icon:Hide()
-	self.Dispell = false
 end
 
 local OnEnter = function(self)
@@ -289,7 +294,7 @@ f:SetWidth(20)
 f:SetPoint("CENTER")
 f:SetMovable(true)
 f:SetUserPlaced(true)
-
+f:SetClampedToScreen(true)
 
 local raid = {}
 oUF:Factory(function(self)
@@ -328,6 +333,7 @@ oUF:Factory(function(self)
 		r:SetParent(f)
 		r:SetMovable(true)
 		r:Show()
+		r:SetClampedToScreen(true)
 
 		r:Hide()
 
