@@ -1,17 +1,19 @@
 local _G = getfenv(0)
 local oUF = _G.oufgrid or _G.oUF
 
-if not oUF then
+if(not oUF) then
 	return error("oUF_Grid requires oUF")
 end
 
-_G.KanneGrid = {}
-local kgrid = _G.KanneGrid
+local parent, ns = ...
+
+ns.oGrid = {}
+ns.oUF = oUF
+
+local oGrid = ns.oGrid
 
 local f = CreateFrame("Frame", "oUF_Grid", UIParent)
 local bg = CreateFrame("Frame", nil, f)
-
-local grid = setmetatable({}, { __index = oUF })
 
 local UnitName = UnitName
 local UnitClass = UnitClass
@@ -21,7 +23,7 @@ local UnitDebuff = UnitDebuff
 local UnitInRaid = UnitInRaid
 
 local size = 40
-oUF.size = size
+oGrid.size = size
 
 local supernova = [[Interface\AddOns\oUF_Grid\media\nokiafc22.ttf]]
 local texture = [[Interface\AddOns\oUF_Grid\media\gradient32x32.tga]]
@@ -186,7 +188,7 @@ local frame = function(self, unit, single)
 	heal:SetVertexColor(0, 1, 0, 0.8)
 	heal:Hide()
 
-	heal.Override = kgrid.HealPredict
+	heal.Override = oGrid.HealPredict
 
 	self.HealPrediction = heal
 
@@ -266,18 +268,19 @@ local frame = function(self, unit, single)
 
 	self.Reset = reset
 
-	self:RegisterEvent("UNIT_AURA", kgrid.UNIT_AURA)
-	self:RegisterEvent("PLAYER_TARGET_CHANGED", kgrid.PLAYER_TARGET_CHANGED)
+	self:RegisterEvent("UNIT_AURA", oGrid.UNIT_AURA)
+	self:RegisterEvent("PLAYER_TARGET_CHANGED", oGrid.PLAYER_TARGET_CHANGED)
 	self:RegisterEvent("UNIT_NAME_UPDATE", Name_Update)
 
 	table.insert(self.__elements, Name_Update)
-	table.insert(self.__elements, kgrid.PLAYER_TARGET_CHANGED)
+	table.insert(self.__elements, oGrid.PLAYER_TARGET_CHANGED)
+	table.insert(self.__elements, oGrid.UNIT_AURA)
 
 	return self
 end
 
-grid:RegisterStyle("Kanne-Grid", frame)
-grid:SetActiveStyle("Kanne-Grid")
+oUF:RegisterStyle("Kanne-Grid", frame)
+oUF:SetActiveStyle("Kanne-Grid")
 
 local SubGroups = function()
 	local t = {}
@@ -413,4 +416,3 @@ bg.PLAYER_LOGIN = bg.RAID_ROSTER_UPDATE
 bg:RegisterEvent("PLAYER_LOGIN")
 bg:RegisterEvent("RAID_ROSTER_UPDATE")
 bg:RegisterEvent("PARTY_MEMBERS_CHANGED")
---end)

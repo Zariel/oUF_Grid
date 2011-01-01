@@ -1,11 +1,7 @@
-local _G = getfenv(0)
-local oUF = _G.oufgrid or _G.oUF
+local parent, ns = ...
 
-if not oUF then
-	return error("oUF_Grid requires oUF")
-end
-
-local kgrid = _G.KanneGrid
+local oUF = ns.oUF
+local oGrid = ns.oGrid
 
 local UnitName = UnitName
 local UnitClass = UnitClass
@@ -22,9 +18,9 @@ local playerGUID = UnitGUID("player")
 -- Currently selected raid member frame.
 local curFrame
 local UpdateRoster
-local size = oUF.size
+local size = oGrid.size
 
-if playerName == "Kanne" then
+if(playerName == "Kanne") then
 	playerClass = "PALADIN"
 end
 
@@ -101,7 +97,7 @@ do
 	end
 end
 
-function kgrid:HealPredict(event, unit)
+function oGrid:HealPredict(event, unit)
 	if(self.unit ~= unit) then return end
 	local hp = self.HealPrediction
 
@@ -134,7 +130,7 @@ function kgrid:HealPredict(event, unit)
 end
 
 local frame
-function kgrid:UNIT_AURA(event)
+function oGrid:UNIT_AURA(event, unit)
 	if(not self or self.unit ~= unit) then return end
 
 	local cur, tex, dis, dur, exp
@@ -195,7 +191,7 @@ function kgrid:UNIT_AURA(event)
 	end
 end
 
-function kgrid:PLAYER_TARGET_CHANGED(event, ...)
+function oGrid:PLAYER_TARGET_CHANGED(event)
 	local inRaid = UnitInRaid("target")
 	local frame
 	if(inRaid) then
