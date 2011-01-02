@@ -106,13 +106,13 @@ function oGrid:HealPredict(event, unit)
 		local max = UnitHealthMax(unit)
 		local incPer = incHeal / max
 		local per = UnitHealth(unit) / max
-		local incSize = incPer * oUF.size
-		local size = oUF.size * per
+		local incSize = incPer * oGrid.size
+		local size = oGrid.size * per
 
 		if(per > 98) then return hp:Hide() end
 
-		if(incSize + size >= oUF.size) then
-			incSize = oUF.size - size
+		if(incSize + size >= oGrid.size) then
+			incSize = oGrid.size - size
 		end
 
 		if(incSize > 0) then
