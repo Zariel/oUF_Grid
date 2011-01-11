@@ -138,6 +138,7 @@ end
 local OnEnter = function(self)
 	UnitFrame_OnEnter(self)
 
+	GameTooltip:ClearAllPoints()
 	GameTooltip:SetPoint("BOTTOMLEFT", bg, "TOPLEFT")
 	self.Highlight:Show()
 end
