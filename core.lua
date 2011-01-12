@@ -22,7 +22,7 @@ local unpack = unpack
 local UnitDebuff = UnitDebuff
 local UnitInRaid = UnitInRaid
 
-local size = 40
+local size = 46
 oGrid.size = size
 
 local supernova = [[Interface\AddOns\oUF_Grid\media\nokiafc22.ttf]]
@@ -30,7 +30,7 @@ local texture = [[Interface\AddOns\oUF_Grid\media\gradient32x32.tga]]
 local hightlight = [[Interface\AddOns\oUF_Grid\media\mouseoverHighlight.tga]]
 
 local colors = {
-	class ={
+	class = {
 		-- I accept patches you know
 		["DEATHKNIGHT"] = { 0.77, 0.12, 0.23 },
 		["DRUID"] = { 1.0 , 0.49, 0.04 },
@@ -172,7 +172,7 @@ local frame = function(self, unit, single)
 	hp:SetStatusBarTexture(texture)
 	hp:SetOrientation("VERTICAL")
 	-- hp:SetFrameLevel(5)
-	hp:SetStatusBarColor(0, 0, 0, 0.75)
+	hp:SetStatusBarColor(0, 0, 0, 0.70)
 	--hp:SetAlpha(0.)
 
 	local hpbg = hp:CreateTexture(nil, "BACKGROUND")
@@ -300,6 +300,7 @@ f:SetMovable(true)
 f:SetUserPlaced(true)
 f:SetClampedToScreen(true)
 
+local spacing = 10
 local raid = {}
 oUF:Factory(function(self)
 	for i = 1, 8 do
@@ -314,7 +315,7 @@ oUF:Factory(function(self)
 				"showSolo", true,
 				"showRaid", true,
 				"groupFilter", i,
-				"yOffset", - 9,
+				"yOffset", - spacing,
 				"oUF-initialConfigFunction", string.format([[
 					self:SetHeight(%d)
 					self:SetWidth(%d)
@@ -325,13 +326,13 @@ oUF:Factory(function(self)
 			r = oUF:SpawnHeader(nil, nil, "solo,party,raid",
 				"showRaid", true,
 				"groupFilter", i,
-				"yOffset", - 9,
+				"yOffset", - spacing,
 				"oUF-initialConfigFunction", string.format([[
 					self:SetHeight(%d)
 					self:SetWidth(%d)
 				]], size, size)
 			)
-			r:SetPoint("TOPLEFT", raid[i - 1], "TOPRIGHT", 9, 0)
+			r:SetPoint("TOPLEFT", raid[i - 1], "TOPRIGHT", spacing, 0)
 		end
 
 		r:SetParent(f)
@@ -376,7 +377,7 @@ bg:SetScript("OnEvent", function(self, event, ...)
 end)
 
 function bg:RAID_ROSTER_UPDATE()
-	if not UnitInRaid("player") then
+	if(not UnitInRaid("player")) then
 		return self:PARTY_MEMBERS_CHANGED()
 	else
 		self:Show()
@@ -398,18 +399,18 @@ function bg:RAID_ROSTER_UPDATE()
 	end
 
 	self:ClearAllPoints()
-	self:SetPoint("TOP", raid[1], "TOP", 0, 8)
-	self:SetPoint("LEFT", raid[first], "LEFT", -8 , 0)
-	self:SetPoint("RIGHT", raid[last], "RIGHT", 8, 0)
-	self:SetPoint("BOTTOM", raid[h], "BOTTOM", 0, -8)
+	self:SetPoint("TOP", raid[1], "TOP", 0, spacing)
+	self:SetPoint("LEFT", raid[first], "LEFT", - spacing , 0)
+	self:SetPoint("RIGHT", raid[last], "RIGHT", spacing, 0)
+	self:SetPoint("BOTTOM", raid[h], "BOTTOM", 0, - spacing)
 end
 
 function bg:PARTY_MEMBERS_CHANGED()
 	if UnitInRaid("player") then return end
 
 	self:ClearAllPoints()
-	self:SetPoint("BOTTOMRIGHT", raid[1], "BOTTOMRIGHT", 8, - 8)
-	self:SetPoint("TOPLEFT", raid[1], "TOPLEFT", - 8, 8)
+	self:SetPoint("BOTTOMRIGHT", raid[1], "BOTTOMRIGHT", spacing, - spacing)
+	self:SetPoint("TOPLEFT", raid[1], "TOPLEFT", - spacing, spacing)
 	self:Show()
 end
 

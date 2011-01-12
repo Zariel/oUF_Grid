@@ -191,7 +191,7 @@ function oGrid:UNIT_AURA(event, unit)
 	end
 end
 
-function oGrid:PLAYER_TARGET_CHANGED(event)
+function oGrid:PLAYER_TARGET_CHANGED(...)
 	local inRaid = UnitInRaid("target")
 	local frame
 	if(inRaid) then
