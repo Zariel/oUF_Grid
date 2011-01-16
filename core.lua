@@ -22,7 +22,8 @@ local unpack = unpack
 local UnitDebuff = UnitDebuff
 local UnitInRaid = UnitInRaid
 
-local size = 46
+local spacing = 10
+local size = 42
 oGrid.size = size
 
 local supernova = [[Interface\AddOns\oUF_Grid\media\nokiafc22.ttf]]
@@ -137,9 +138,6 @@ end
 
 local OnEnter = function(self)
 	UnitFrame_OnEnter(self)
-
-	GameTooltip:ClearAllPoints()
-	GameTooltip:SetPoint("BOTTOMLEFT", bg, "TOPLEFT")
 	self.Highlight:Show()
 end
 
@@ -300,7 +298,6 @@ f:SetMovable(true)
 f:SetUserPlaced(true)
 f:SetClampedToScreen(true)
 
-local spacing = 10
 local raid = {}
 oUF:Factory(function(self)
 	for i = 1, 8 do
