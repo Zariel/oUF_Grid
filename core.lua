@@ -22,8 +22,8 @@ local unpack = unpack
 local UnitDebuff = UnitDebuff
 local UnitInRaid = UnitInRaid
 
-local spacing = 10
-local size = 42
+local spacing = 9
+local size = 44
 oGrid.size = size
 
 local supernova = [[Interface\AddOns\oUF_Grid\media\nokiafc22.ttf]]
@@ -230,8 +230,8 @@ local frame = function(self, unit, single)
 	local icon = hp:CreateTexture(nil, "OVERLAY")
 	icon:SetPoint("CENTER")
 	icon:SetAlpha(1)
-	icon:SetHeight(16)
-	icon:SetWidth(16)
+	icon:SetHeight(20)
+	icon:SetWidth(20)
 	icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 	icon:Hide()
 

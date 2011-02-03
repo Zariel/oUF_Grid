@@ -26,11 +26,12 @@ end
 
 -- spell = priority
 local debuffs = setmetatable({
-	["Viper Sting"] = 7,
+	-- Blackwing Decent
+	["Low Health"] = 10,    -- Chimaeron
 
-	["Wound Poison"] = 9,
+	-- PVP
+
 	["Mortal Strike"] = 8,
-	["Aimed Shot"] = 8,
 
 	["Counterspell - Silenced"] = 11,
 	["Counterspell"] = 10,
@@ -77,9 +78,6 @@ do
 			["Poison"] = true,
 			["Magic"] = true,
 			["Disease"] = true,
-		},
-		["MAGE"] = {
-			["Curse"] = true,
 		},
 		["DRUID"] = {
 			["Curse"] = true,
@@ -165,37 +163,39 @@ function oGrid:UNIT_AURA(event, unit)
 		self.border:SetVertexColor(col.r, col.g, col.b)
 		self.Dispell = true
 		self.border:Show()
-	elseif self.Dispell then
-		if (curself ~= frame) or not curFrame then
+	elseif(self.Dispell) then
+		if(curFrame ~= self or not curFrame) then
 			self.border:Hide()
-		elseif curself == frame then
+		elseif(curFrame == self) then
 			self.border:SetVertexColor(1, 1, 1)
 		end
-		self.Dispell = False
-	elseif curself and curFrame == frame then
+
+		self.Dispell = false
+	elseif(curFrame and curFrame == self) then
 		self.border:SetVertexColor(1, 1, 1)
 	end
 
-	if (exp and exp > 0) and (dur and dur > 0) then
+	if(cur) then
+		self.Icon:SetTexture(tex)
+		self.Icon:Show()
+	else
+		self.Icon:Hide()
+	end
+
+	if((exp and dur) and (exp > 0 and dur > 0)) then
 		self.cd:SetCooldown(exp - dur, dur)
 		self.cd:Show()
 	else
 		self.cd:Hide()
 	end
 
-	if cur then
-		self.Icon:SetTexture(tex)
-		self.Icon:Show()
-	else
-		self.Icon:Hide()
-	end
 end
 
 function oGrid:PLAYER_TARGET_CHANGED(...)
 	local inRaid = UnitInRaid("target")
 	local frame
 	if(inRaid) then
-		if UnitExists("raid" .. inRaid) then
+		if(UnitExists("raid" .. inRaid)) then
 			frame = oUF.units["raid" .. inRaid]
 		end
 	else
@@ -204,8 +204,8 @@ function oGrid:PLAYER_TARGET_CHANGED(...)
 			frame = oUF.units.player
 		else
 			for i = 1, 4 do
-				if UnitExists("party" .. i) then
-					if name == UnitName("party" .. i) then
+				if(UnitExists("party" .. i)) then
+					if(name == UnitName("party" .. i)) then
 						frame = oUF.units["party" .. i]
 						break
 					end
