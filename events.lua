@@ -191,27 +191,14 @@ function oGrid:UNIT_AURA(event, unit)
 
 end
 
-function oGrid:PLAYER_TARGET_CHANGED(...)
-	local inRaid = UnitInRaid("target")
+function oGrid:PLAYER_TARGET_CHANGED()
 	local frame
-	if(inRaid) then
-		if(UnitExists("raid" .. inRaid)) then
-			frame = oUF.units["raid" .. inRaid]
-		end
-	else
-		local name = UnitName("target")
-		if(name == playerName and oUF.units.player) then
-			frame = oUF.units.player
-		else
-			for i = 1, 4 do
-				if(UnitExists("party" .. i)) then
-					if(name == UnitName("party" .. i)) then
-						frame = oUF.units["party" .. i]
-						break
-					end
-				else
-					break
-				end
+	if(UnitIsFriend("player", "target") and UnitIsPlayer("target")) then
+		local target = UnitName("target")
+		for k, v in pairs(oUF.objects) do
+			if(v.unit and target == UnitName(v.unit)) then
+				frame = v
+				break
 			end
 		end
 	end
