@@ -1,4 +1,4 @@
-## Interface: 40000
+## Interface: 60000
 ## Author: Zariel
 ## Title: oUF_Grid
 ## Version: 4.0.1-20
