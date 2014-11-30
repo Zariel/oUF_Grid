@@ -168,6 +168,7 @@ local frame = function(self, unit, single)
 	-- hp:SetFrameLevel(5)
 	hp:SetStatusBarColor(0, 0, 0, 0.70)
 	--hp:SetAlpha(0.)
+	hp.frequentUpdates = true
 
 	local hpbg = hp:CreateTexture(nil, "BACKGROUND")
 	hpbg:SetAllPoints(hp)
@@ -181,6 +182,7 @@ local frame = function(self, unit, single)
 	heal:SetPoint("RIGHT", self, "RIGHT")
 	heal:SetTexture(texture)
 	heal:SetVertexColor(0, 1, 0, 0.8)
+	heal.frequentUpdates = true
 	heal:Hide()
 
 	heal.Override = oGrid.HealPredict
