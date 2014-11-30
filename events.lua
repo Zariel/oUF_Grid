@@ -224,7 +224,9 @@ function oGrid:PLAYER_TARGET_CHANGED()
 				frame.border:SetVertexColor(1, 1, 1)
 			end
 		else
-			curFrame.border:Hide()
+			if(not curFrame.Dispoll) then
+				curFrame.border:Hide()
+			end
 
 			if(not frame.Dispell) then
 				frame.border:SetVertexColor(1, 1, 1)
